@@ -2,7 +2,10 @@ package main
 
 import (
 	"bytes"
-	"github.com/nsf/termbox-go"
+
+	//"github.com/nsf/termbox-go"
+	"github.com/gdamore/tcell/termbox"
+
 	"github.com/nsf/tulib"
 	"os"
 	"os/exec"

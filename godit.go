@@ -3,7 +3,10 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/nsf/termbox-go"
+
+	//"github.com/nsf/termbox-go"
+	"github.com/gdamore/tcell/termbox"
+
 	"github.com/nsf/tulib"
 	"os"
 	"os/exec"
@@ -272,7 +275,7 @@ func (g *godit) kill_all_views_but_active() {
 
 // Call it manually only when views layout has changed.
 func (g *godit) resize() {
-	g.uibuf = tulib.TermboxBuffer()
+	g.uibuf = tulib.TermboxBuffer() // jea: only use of TermboxBuffer is here.
 	views_area := g.uibuf.Rect
 	views_area.Height -= 1 // reserve space for command line
 	g.views.resize(views_area)

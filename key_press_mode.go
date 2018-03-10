@@ -1,7 +1,8 @@
 package main
 
 import (
-	"github.com/nsf/termbox-go"
+	//"github.com/nsf/termbox-go"
+	"github.com/gdamore/tcell/termbox"
 )
 
 type key_press_mode struct {
