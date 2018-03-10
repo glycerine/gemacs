@@ -3,7 +3,9 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/nsf/termbox-go"
+	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/termbox"
+	//"github.com/nsf/termbox-go"
 	"github.com/nsf/tulib"
 	"os"
 	"strings"
@@ -247,6 +249,7 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 	tabstop := 0
 	bx := 0
 	data := line.data
+	y := coff / v.uibuf.Width
 
 	if len(v.highlight_bytes) > 0 {
 		v.find_highlight_ranges_for_line(data)
@@ -262,12 +265,16 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 		}
 
 		if rx >= v.uibuf.Width {
-			last := coff + v.uibuf.Width - 1
-			v.uibuf.Cells[last] = termbox.Cell{
-				Ch: '>',
-				Fg: termbox.ColorDefault,
-				Bg: termbox.ColorDefault,
-			}
+			//last := coff + v.uibuf.Width - 1
+
+			v.uibuf.Screen.SetContent(v.uibuf.Width-1, y, '>', nil, 0)
+			/*
+				v.uibuf.Cells[last] = termbox.Cell{
+					Ch: '>',
+					Fg: termbox.ColorDefault,
+					Bg: termbox.ColorDefault,
+				}
+			*/
 			break
 		}
 
@@ -282,18 +289,22 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 				}
 
 				if rx >= 0 {
-					v.uibuf.Cells[coff+rx] = v.make_cell(
-						line_num, bx, ' ')
+					v.uibuf.Screen.SetContent(rx, y, ' ', nil, 0)
+					//v.uibuf.Cells[coff+rx] = v.make_cell(
+					//	line_num, bx, ' ')
 				}
 			}
 		case r < 32:
 			// invisible chars like ^R or ^@
 			if rx >= 0 {
-				v.uibuf.Cells[coff+rx] = termbox.Cell{
-					Ch: '^',
-					Fg: termbox.ColorRed,
-					Bg: termbox.ColorDefault,
-				}
+				v.uibuf.Screen.SetContent(rx, y, '^', nil, tcell.StyleDefault.Foreground(tcell.ColorRed))
+				/*
+					                 v.uibuf.Cells[coff+rx] = termbox.Cell{
+										Ch: '^',
+										Fg: termbox.ColorRed,
+										Bg: termbox.ColorDefault,
+									}
+				*/
 			}
 			x++
 			rx = x - line_voffset
@@ -301,17 +312,21 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 				break
 			}
 			if rx >= 0 {
-				v.uibuf.Cells[coff+rx] = termbox.Cell{
-					Ch: invisible_rune_table[r],
-					Fg: termbox.ColorRed,
-					Bg: termbox.ColorDefault,
-				}
+				v.uibuf.Screen.SetContent(rx, y, invisible_rune_table[r], nil, tcell.StyleDefault.Foreground(tcell.ColorRed))
+				/*
+					v.uibuf.Cells[coff+rx] = termbox.Cell{
+						Ch: invisible_rune_table[r],
+						Fg: termbox.ColorRed,
+						Bg: termbox.ColorDefault,
+					}
+				*/
 			}
 			x++
 		default:
 			if rx >= 0 {
-				v.uibuf.Cells[coff+rx] = v.make_cell(
-					line_num, bx, r)
+				v.uibuf.Screen.SetContent(rx, y, r, nil, tcell.StyleDefault.Foreground(tcell.ColorRed))
+				//v.uibuf.Cells[coff+rx] = v.make_cell(
+				//	line_num, bx, r)
 			}
 			x += rune_width(r)
 		}
@@ -320,11 +335,14 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 	}
 
 	if line_voffset != 0 {
-		v.uibuf.Cells[coff] = termbox.Cell{
-			Ch: '<',
-			Fg: termbox.ColorDefault,
-			Bg: termbox.ColorDefault,
-		}
+		v.uibuf.Screen.SetContent(0, y, '<', nil, 0)
+		/*
+			v.uibuf.Cells[coff] = termbox.Cell{
+				Ch: '<',
+				Fg: termbox.ColorDefault,
+				Bg: termbox.ColorDefault,
+			}
+		*/
 	}
 }
 
