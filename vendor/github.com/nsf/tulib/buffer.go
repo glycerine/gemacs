@@ -23,27 +23,7 @@ type Buffer struct {
 
 func NewBuffer(w, h int) Buffer {
 	// jea: just ignore w, h
-
-	s, e := tcell.NewScreen()
-	if e != nil {
-		panic(e)
-	}
-	e = s.Init()
-	if e != nil {
-		panic(e)
-	}
-	w2, h2 := s.Size()
-	/*	if w2 != w {
-			panic(fmt.Sprintf("w2 != w. w2=%v, w=%v", w2, w))
-		}
-		if h2 != h {
-			panic(fmt.Sprintf("h2 != h"))
-		}
-	*/
-	return Buffer{
-		Screen: s,
-		Rect:   Rect{0, 0, w2, h2},
-	}
+	return TermboxBuffer()
 }
 
 func TermboxBuffer() Buffer {
@@ -79,41 +59,12 @@ func (this *Buffer) Set(x, y int, proto termbox.Cell) {
 	this.Screen.SetContent(x, y, proto.Ch, nil, 0)
 }
 
-/*
-// Gets a pointer to the cell at specified position or nil if it's out
-//  of range.
-func (this *Buffer) Get(x, y int) *termbox.Cell {
-	if x < 0 || x >= this.Width {
-		return nil
-	}
-	if y < 0 || y >= this.Height {
-		return nil
-	}
-	off := this.Width*y + x
-	return &this.Cells[off]
-
-	mainc, combc, style, width := this.Screen.GetContent(x, y)
-}
-*/
-
 // Resizes the Buffer, buffer contents are invalid after the resize.
 func (this *Buffer) Resize(nw, nh int) {
 
 	b := TermboxBuffer()
 	this.Screen = b.Screen
 	this.Rect = b.Rect
-	/*
-		this.Width = nw
-		this.Height = nh
-
-		this.Screen.Resize()
-		nsize := nw * nh
-		if nsize <= cap(this.Cells) {
-			this.Cells = this.Cells[:nsize]
-		} else {
-			this.Cells = make([]termbox.Cell, nsize)
-		}
-	*/
 }
 
 func (this *Buffer) Blit(dstr Rect, srcx, srcy int, src *Buffer) {
