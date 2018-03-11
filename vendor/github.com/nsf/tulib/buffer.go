@@ -81,6 +81,7 @@ func (this *Buffer) Set(x, y int, proto termbox.Cell) {
 func (this *Buffer) Resize(nw, nh int) {
 	pp("top of Resize")
 	b := TermboxBuffer()
+
 	this.Screen = b.Screen
 	this.Rect = b.Rect
 }
@@ -140,13 +141,14 @@ func (this *Buffer) Blit(dstr Rect, srcx, srcy int, src *Buffer) {
 
 // Unsafe part of the fill operation, doesn't check for bounds.
 func (this *Buffer) unsafe_fill(dest Rect, proto termbox.Cell) {
+	pp("unsafe fill proto='%#v', dest='%#v'", proto, dest)
 	stride := this.Width
 	off := this.Width*dest.Y + dest.X
 	st := termbox.MakeStyle(proto.Fg, proto.Bg)
 	for y := 0; y < dest.Height; y++ {
 		for x := 0; x < dest.Width; x++ {
 			//this.Cells[off+x] = proto
-			this.Screen.SetContent(x, y, proto.Ch, nil, st)
+			this.Screen.SetContent(dest.X+x, dest.Y+y, proto.Ch, nil, st)
 		}
 		off += stride
 	}
