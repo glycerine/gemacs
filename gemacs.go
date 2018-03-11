@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime/debug"
 	"strconv"
 
 	"github.com/gdamore/tcell/termbox"
@@ -281,7 +280,7 @@ func (g *godit) kill_all_views_but_active() {
 
 // Call it manually only when views layout has changed.
 func (g *godit) resize() {
-	pp("top of resize, g='%#v'", g)
+	//pp("top of resize, g='%#v'", g)
 	g.uibuf = tulib.TermboxBuffer() // jea: only use of TermboxBuffer is here.
 	views_area := g.uibuf.Rect
 	views_area.Height -= 1 // reserve space for command line
@@ -431,7 +430,7 @@ func (g *godit) main_loop() {
 	for {
 		select {
 		case ev := <-g.termbox_event:
-			pp("got event from g.termbox_event, ev='%#v'", ev)
+			//pp("got event from g.termbox_event, ev='%#v'", ev)
 			ok := g.handle_event(&ev)
 			if !ok {
 				return
@@ -447,7 +446,7 @@ func (g *godit) consume_more_events() bool {
 	for {
 		select {
 		case ev := <-g.termbox_event:
-			pp("consume_more_events got ev='%#v'", ev)
+			//pp("consume_more_events got ev='%#v'", ev)
 			select {}
 
 			ok := g.handle_event(&ev)
@@ -496,7 +495,7 @@ func (g *godit) handle_event(ev *termbox.Event) bool {
 }
 
 func (g *godit) set_overlay_mode(m overlay_mode) {
-	pp("top of set_overlay_mode") // unnamed not yet written!
+	//pp("top of set_overlay_mode") // unnamed not yet written!
 
 	if g.overlay != nil {
 		g.overlay.exit()
@@ -508,7 +507,7 @@ func (g *godit) set_overlay_mode(m overlay_mode) {
 func (g *godit) save_active_buffer(raw bool) {
 	v := g.active.leaf
 	b := v.buf
-	pp("top of save_active_buffer(), g.active.leaf.buf.path = '%v'", b.path)
+	//pp("top of save_active_buffer(), g.active.leaf.buf.path = '%v'", b.path)
 
 	if b.path != "" {
 		if b.synced_with_disk() {
@@ -530,7 +529,7 @@ func (g *godit) save_active_buffer(raw bool) {
 
 	g.set_overlay_mode(init_line_edit_mode(g, g.save_as_buffer_lemp(raw)))
 
-	pp("back from g.set_overlay_mode(). stack:\n'%s'\n", string(debug.Stack()))
+	//pp("back from g.set_overlay_mode(). stack:\n'%s'\n", string(debug.Stack()))
 }
 
 // "lemp" stands for "line edit mode params"
