@@ -5,7 +5,6 @@ import (
 
 	"github.com/gdamore/tcell"
 	"github.com/gdamore/tcell/termbox"
-	//"github.com/nsf/termbox-go"
 	"unicode/utf8"
 
 	"github.com/glycerine/verb"
@@ -31,7 +30,6 @@ const (
 
 type Buffer struct {
 	Screen tcell.Screen
-	//Cells  []termbox.Cell
 	Rect
 }
 
@@ -51,6 +49,10 @@ func TermboxBuffer() Buffer {
 		panic(e)
 	}
 	w, h := s.Size()
+
+	// set the global screen. backwards compatible
+	// hack for termbox.
+	termbox.SetScreen(s)
 	return Buffer{
 		Screen: s,
 		Rect:   Rect{0, 0, w, h},
