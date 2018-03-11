@@ -60,6 +60,7 @@ func (e extended_mode) on_key(ev *termbox.Event) {
 		return
 	case termbox.KeyCtrlS:
 		g.save_active_buffer(false)
+		pp("done with CtrlS!")
 		return
 	case termbox.KeyCtrlSlash:
 		g.active.leaf.on_vcommand(vcommand_redo, 0)
