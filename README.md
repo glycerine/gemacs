@@ -4,6 +4,8 @@ gemacs: an emacs written in Go
 `gemacs` is derived from `godit`, https://github.com/nsf/godit,
 and adapted to use https://github.com/gdamore/tcell instead of `termbox-go`.
 
+Quoting from the original readme, with the program name updated:
+
 Screenshots:
 
  * http://nosmileface.ru/images/godit-linux1.png
