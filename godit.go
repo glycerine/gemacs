@@ -3,18 +3,14 @@ package main
 import (
 	"bytes"
 	"fmt"
-
-	//"github.com/nsf/termbox-go"
-	//"github.com/gdamore/tcell"
-	"github.com/gdamore/tcell/termbox"
-
-	"github.com/glycerine/verb"
-
-	"github.com/nsf/tulib"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
+
+	"github.com/gdamore/tcell/termbox"
+	"github.com/glycerine/verb"
+	"github.com/nsf/tulib"
 )
 
 var pp = verb.PP

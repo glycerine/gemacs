@@ -3,9 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
-	//"github.com/gdamore/tcell"
 	"github.com/gdamore/tcell/termbox"
-	//"github.com/nsf/termbox-go"
 	"github.com/nsf/tulib"
 	"os"
 	"strings"
