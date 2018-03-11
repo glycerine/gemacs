@@ -9,14 +9,14 @@ import (
 	"strconv"
 
 	"github.com/gdamore/tcell/termbox"
-	"github.com/glycerine/verb"
+	//"github.com/glycerine/verb"
 	"github.com/nsf/tulib"
 )
 
-var pp = verb.PP
+//var pp = verb.PP
 
 func init() {
-	verb.VerboseVerbose = true
+	//verb.VerboseVerbose = true
 }
 
 const (
