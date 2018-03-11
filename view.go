@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/gdamore/tcell"
+	//"github.com/gdamore/tcell"
 	"github.com/gdamore/tcell/termbox"
 	//"github.com/nsf/termbox-go"
 	"github.com/nsf/tulib"
@@ -267,7 +267,8 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 		if rx >= v.uibuf.Width {
 			//last := coff + v.uibuf.Width - 1
 
-			v.uibuf.Screen.SetContent(v.uibuf.Width-1, y, '>', nil, 0)
+			st := termbox.MakeStyle(termbox.ColorDefault, termbox.ColorDefault)
+			v.uibuf.Screen.SetContent(v.uibuf.Width-1, y, '>', nil, st)
 			/*
 				v.uibuf.Cells[last] = termbox.Cell{
 					Ch: '>',
@@ -289,15 +290,17 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 				}
 
 				if rx >= 0 {
-					v.uibuf.Screen.SetContent(rx, y, ' ', nil, 0)
-					//v.uibuf.Cells[coff+rx] = v.make_cell(
-					//	line_num, bx, ' ')
+					cell := v.make_cell(line_num, bx, ' ')
+					st := termbox.MakeStyle(cell.Fg, cell.Bg)
+					v.uibuf.Screen.SetContent(rx, y, ' ', nil, st)
+					//v.uibuf.Cells[coff+rx] = cell
 				}
 			}
 		case r < 32:
 			// invisible chars like ^R or ^@
+			red := termbox.MakeStyle(termbox.ColorRed, termbox.ColorDefault)
 			if rx >= 0 {
-				v.uibuf.Screen.SetContent(rx, y, '^', nil, tcell.StyleDefault.Foreground(tcell.ColorRed))
+				v.uibuf.Screen.SetContent(rx, y, '^', nil, red)
 				/*
 					                 v.uibuf.Cells[coff+rx] = termbox.Cell{
 										Ch: '^',
@@ -312,7 +315,7 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 				break
 			}
 			if rx >= 0 {
-				v.uibuf.Screen.SetContent(rx, y, invisible_rune_table[r], nil, tcell.StyleDefault.Foreground(tcell.ColorRed))
+				v.uibuf.Screen.SetContent(rx, y, invisible_rune_table[r], nil, red)
 				/*
 					v.uibuf.Cells[coff+rx] = termbox.Cell{
 						Ch: invisible_rune_table[r],
@@ -324,7 +327,9 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 			x++
 		default:
 			if rx >= 0 {
-				v.uibuf.Screen.SetContent(rx, y, r, nil, tcell.StyleDefault.Foreground(tcell.ColorRed))
+				cell := v.make_cell(line_num, bx, r)
+				st := termbox.MakeStyle(cell.Fg, cell.Bg)
+				v.uibuf.Screen.SetContent(rx, y, r, nil, st)
 				//v.uibuf.Cells[coff+rx] = v.make_cell(
 				//	line_num, bx, r)
 			}
@@ -335,7 +340,8 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 	}
 
 	if line_voffset != 0 {
-		v.uibuf.Screen.SetContent(0, y, '<', nil, 0)
+		st := termbox.MakeStyle(termbox.ColorDefault, termbox.ColorDefault)
+		v.uibuf.Screen.SetContent(0, y, '<', nil, st)
 		/*
 			v.uibuf.Cells[coff] = termbox.Cell{
 				Ch: '<',
