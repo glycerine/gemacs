@@ -1,7 +1,7 @@
 gemacs: an emacs written in Go
 ==============================
 
-Gemacs is derived from Godit. https://github.com/nsf/godit,
+`gemacs` is derived from `godit`, https://github.com/nsf/godit,
 and adapted to use https://github.com/gdamore/tcell instead of `termbox-go`.
 
 Screenshots:
