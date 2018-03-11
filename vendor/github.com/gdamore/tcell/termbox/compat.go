@@ -20,10 +20,7 @@ import (
 	"errors"
 
 	"github.com/gdamore/tcell"
-	"github.com/glycerine/verb"
 )
-
-var pp = verb.PP
 
 var screen tcell.Screen
 var outMode OutputMode
@@ -37,27 +34,21 @@ func SetScreen(s tcell.Screen) {
 
 // Init initializes the screen for use.
 func Init() error {
-	// jea: only call tcell.NewScreen once!!
 	if screen != nil {
-		pp("tcell.NewScreen Init() already initialized, returning nil early.") //  screen='%p'/'%#v'"), screen, screen)
-		// jea: no-op
+		// only init once
 		return nil
 	}
 	outMode = OutputNormal
 
 	s, e := tcell.NewScreen()
 	if e != nil {
-		pp("tcell.NewScreen() error: '%v'", e)
 		return e
 	}
-	pp("tcell.NewScreen successful.")
 	e = s.Init()
 	if e != nil {
-		pp("tcell.NewScreen Init() error!: '%v'", e)
 		return e
 	}
 
-	pp("tcell.NewScreen successfully Initialized, assigning to screen.")
 	screen = s
 	return nil
 }
@@ -252,16 +243,14 @@ type Event struct {
 }
 
 // Event types.
-// NB: this are different from the original nsf/termbox-go
-//     codes. Not strictly comptable.
 const (
-	EventNone      EventType = iota
-	EventKey                 // 1
-	EventResize              // 2
-	EventMouse               // 3
-	EventInterrupt           // 4
-	EventError               // 5
-	EventRaw                 // 6
+	EventKey EventType = iota
+	EventResize
+	EventMouse
+	EventInterrupt
+	EventError
+	EventRaw
+	EventNone
 )
 
 // Keys codes.
@@ -392,13 +381,6 @@ type Cell struct {
 	Fg Attribute
 	Bg Attribute
 }
-
-/*
-// jea: new, from recent termbox-go api
-func CellBuffer() []Cell {
-	return screen.GetCellBuffer().cells
-}
-*/
 
 const (
 	KeyCtrlTilde      Key = 0x00
