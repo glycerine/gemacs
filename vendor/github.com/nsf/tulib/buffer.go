@@ -34,11 +34,14 @@ type Buffer struct {
 }
 
 func NewBuffer(w, h int) Buffer {
-	// jea: just ignore w, h
-	return TermboxBuffer()
+	pp("top of NewBuffer, w=%v, h=%v", w, h)
+	b := TermboxBuffer()
+	b.Rect = Rect{0, 0, w, h}
+	return b
 }
 
 func TermboxBuffer() Buffer {
+	pp("top of TermboxBuffer")
 
 	termbox.Init()
 	s := termbox.GetScreen()
@@ -57,7 +60,7 @@ func (this *Buffer) Fill(dst Rect, proto termbox.Cell) {
 
 // Sets a cell at specified position
 func (this *Buffer) Set(x, y int, proto termbox.Cell) {
-	//pp("top of Set(x=%v, y=%v)", x, y)
+	pp("top of Set(x=%v, y=%v). this='%#v'", x, y, this)
 	if x < 0 || x >= this.Width {
 		return
 	}

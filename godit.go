@@ -284,9 +284,7 @@ func (g *godit) kill_all_views_but_active() {
 
 // Call it manually only when views layout has changed.
 func (g *godit) resize() {
-	if g.uibuf.Screen == nil {
-		g.uibuf = tulib.TermboxBuffer() // jea: only use of TermboxBuffer is here.
-	}
+	g.uibuf = tulib.TermboxBuffer() // jea: only use of TermboxBuffer is here.
 
 	g.uibuf.Screen.SetStyle(tcell.StyleDefault.
 		Background(tcell.ColorBlack).
