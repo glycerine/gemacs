@@ -110,3 +110,5 @@ Advanced:
   C-x !            - Filter region through an external command [prompt]
 
 ~~~
+
+License: MIT License.
