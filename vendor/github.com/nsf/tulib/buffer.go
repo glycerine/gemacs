@@ -3,6 +3,8 @@ package tulib
 import (
 	"os"
 
+	"runtime/debug"
+
 	"github.com/gdamore/tcell"
 	"github.com/gdamore/tcell/termbox"
 	"unicode/utf8"
@@ -90,7 +92,7 @@ func (this *Buffer) Set(x, y int, proto termbox.Cell) {
 
 // Resizes the Buffer, buffer contents are invalid after the resize.
 func (this *Buffer) Resize(nw, nh int) {
-	pp("top of Resize")
+	pp("top of Resize, nw=%v, nh=%v", nw, nh)
 
 	this.Width = nw
 	this.Height = nh
@@ -104,7 +106,7 @@ func (this *Buffer) Resize(nw, nh int) {
 }
 
 func (this *Buffer) Blit(dstr Rect, srcx, srcy int, src *Buffer) {
-	pp("top of Blit, dstr: '%#v', src: '%#v'", dstr, src)
+	pp("top of Blit, dstr: '%#v', srcx: '%v', srcy: '%v'", dstr, srcx, srcy)
 
 	srcr := Rect{srcx, srcy, 0, 0}
 
@@ -278,6 +280,16 @@ func skip_n_runes(x []byte, n int) []byte {
 
 func (this *Buffer) DrawLabel(dest Rect, params *LabelParams, text []byte) {
 	pp("top of DrawLabel, text = '%s', param='%#v'. dest='%#v'", string(text), params, dest)
+
+	if string(text) == "File to save in:" {
+		pp("not freezing to see if 'unnamed' comes before or after the 'File to save in:' DrawLabel() call. apparently it comes *after*")
+
+		pp(string(debug.Stack()))
+
+		defer func() {
+			pp("done with DrawLabel that did the 'File to save in:' DrawLabel() call.")
+		}()
+	}
 	live := this.Screen != nil
 
 	st := termbox.MakeStyle(params.Fg, params.Bg)
