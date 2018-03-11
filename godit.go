@@ -284,7 +284,9 @@ func (g *godit) kill_all_views_but_active() {
 
 // Call it manually only when views layout has changed.
 func (g *godit) resize() {
-	g.uibuf = tulib.TermboxBuffer() // jea: only use of TermboxBuffer is here.
+	if g.uibuf.Screen == nil {
+		g.uibuf = tulib.TermboxBuffer() // jea: only use of TermboxBuffer is here.
+	}
 
 	g.uibuf.Screen.SetStyle(tcell.StyleDefault.
 		Background(tcell.ColorBlack).
@@ -427,12 +429,13 @@ func (g *godit) main_loop() {
 	g.termbox_event = make(chan termbox.Event, 20)
 	go func() {
 		for {
-			g.termbox_event <- termbox.PollEvent()
+			g.termbox_event <- termbox.PollEventOnScreen(g.uibuf.Screen)
 		}
 	}()
 	for {
 		select {
 		case ev := <-g.termbox_event:
+			pp("got event from g.termbox_event, ev='%#v'", ev)
 			ok := g.handle_event(&ev)
 			if !ok {
 				return

@@ -40,19 +40,10 @@ func NewBuffer(w, h int) Buffer {
 
 func TermboxBuffer() Buffer {
 
-	s, e := tcell.NewScreen()
-	if e != nil {
-		panic(e)
-	}
-	e = s.Init()
-	if e != nil {
-		panic(e)
-	}
+	termbox.Init()
+	s := termbox.GetScreen()
 	w, h := s.Size()
 
-	// set the global screen. backwards compatible
-	// hack for termbox.
-	termbox.SetScreen(s)
 	return Buffer{
 		Screen: s,
 		Rect:   Rect{0, 0, w, h},
@@ -66,7 +57,7 @@ func (this *Buffer) Fill(dst Rect, proto termbox.Cell) {
 
 // Sets a cell at specified position
 func (this *Buffer) Set(x, y int, proto termbox.Cell) {
-	pp("top of Set(x=%v, y=%v)", x, y)
+	//pp("top of Set(x=%v, y=%v)", x, y)
 	if x < 0 || x >= this.Width {
 		return
 	}
@@ -79,7 +70,7 @@ func (this *Buffer) Set(x, y int, proto termbox.Cell) {
 
 // Resizes the Buffer, buffer contents are invalid after the resize.
 func (this *Buffer) Resize(nw, nh int) {
-	pp("top of Resize")
+	//pp("top of Resize")
 	b := TermboxBuffer()
 
 	this.Screen = b.Screen
@@ -87,7 +78,7 @@ func (this *Buffer) Resize(nw, nh int) {
 }
 
 func (this *Buffer) Blit(dstr Rect, srcx, srcy int, src *Buffer) {
-	pp("top of Blit")
+	//pp("top of Blit")
 	srcr := Rect{srcx, srcy, 0, 0}
 
 	// first adjust 'srcr' if 'dstr' has negatives
@@ -141,7 +132,7 @@ func (this *Buffer) Blit(dstr Rect, srcx, srcy int, src *Buffer) {
 
 // Unsafe part of the fill operation, doesn't check for bounds.
 func (this *Buffer) unsafe_fill(dest Rect, proto termbox.Cell) {
-	pp("unsafe fill proto='%#v', dest='%#v'", proto, dest)
+	//pp("unsafe fill proto='%#v', dest='%#v'", proto, dest)
 	stride := this.Width
 	off := this.Width*dest.Y + dest.X
 	st := termbox.MakeStyle(proto.Fg, proto.Bg)
@@ -157,7 +148,7 @@ func (this *Buffer) unsafe_fill(dest Rect, proto termbox.Cell) {
 // draws from left to right, 'off' is the beginning position
 // (DrawLabel uses that method)
 func (this *Buffer) draw_n_first_runes(off, n int, params *LabelParams, text []byte, destX, destY int) {
-	pp("top of draw_n_first_runes")
+	//pp("top of draw_n_first_runes")
 
 	st := termbox.MakeStyle(params.Fg, params.Bg)
 	beg := off
@@ -181,7 +172,7 @@ func (this *Buffer) draw_n_first_runes(off, n int, params *LabelParams, text []b
 // draws from right to left, 'off' is the end position
 // (DrawLabel uses that method)
 func (this *Buffer) draw_n_last_runes(off, n int, params *LabelParams, text []byte, destX, destY int) {
-	pp("top of draw_n_last_runes")
+	//pp("top of draw_n_last_runes")
 
 	st := termbox.MakeStyle(params.Fg, params.Bg)
 
@@ -234,7 +225,7 @@ func skip_n_runes(x []byte, n int) []byte {
 }
 
 func (this *Buffer) DrawLabel(dest Rect, params *LabelParams, text []byte) {
-	pp("top of DrawLabel, text = '%s', param='%#v'", string(text), params)
+	//pp("top of DrawLabel, text = '%s', param='%#v'", string(text), params)
 	st := termbox.MakeStyle(params.Fg, params.Bg)
 
 	if dest.Height != 1 {
