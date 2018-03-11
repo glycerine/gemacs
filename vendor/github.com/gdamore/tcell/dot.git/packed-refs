@@ -1,0 +1,12 @@
+# pack-refs with: peeled fully-peeled 
+e8222e0f897ee19bb884166eefce756a4bf2da9a refs/remotes/origin/altkey
+1516394c5fe8bedcce67ba534ff3bbea27c9626d refs/remotes/origin/buffering
+3433b005f7ea554c3b8f2fc8a397330217d8a63b refs/remotes/origin/bug98
+91d5e748ae648db2568617d7bf2fc90bbff210cd refs/remotes/origin/keybar
+d55f61ca940a4876e2e7156cd08e3ff9edc58fca refs/remotes/origin/master
+9aae61f33ab69dc57a918db1e094d98c9ede0b83 refs/remotes/origin/modcursor
+23ef281842928bc1a0d4a71660daa708068be292 refs/remotes/origin/sysdarwin
+33f5ff39fa0f81207ccadf257a905cce927c2a1b refs/remotes/origin/sysfree
+ca965237d9b031ca3e13c1b9ca1978f1bacdc0ed refs/remotes/origin/views
+10836f5dcf42466df26b12a05342ee5bc80d7522 refs/remotes/origin/win2
+a57ede10db025be7486a1ce088705104494ef405 refs/remotes/origin/windows
