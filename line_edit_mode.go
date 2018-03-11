@@ -93,7 +93,7 @@ func (l *line_edit_mode) draw() {
 		l.prompt_w + 1, ui.Height - 1,
 		view.uibuf.Width, view.uibuf.Height,
 	}
-	ui.Blit(line_r, 0, 0, &view.uibuf)
+	ui.Blit(line_r, 0, 0, view.uibuf)
 	if view.ac == nil {
 		return
 	}
@@ -102,7 +102,7 @@ func (l *line_edit_mode) draw() {
 	proposals := view.ac.actual_proposals()
 	if len(proposals) > 0 {
 		cx, cy := view.cursor_position_for(view.ac.origin)
-		view.ac.draw_onto(&ui, line_r.X+cx, line_r.Y+cy)
+		view.ac.draw_onto(ui, line_r.X+cx, line_r.Y+cy)
 	}
 }
 

@@ -8,6 +8,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/glycerine/verb"
+	"github.com/mattn/go-runewidth"
 )
 
 var pp = verb.PP
@@ -29,28 +30,39 @@ const (
 )
 
 type Buffer struct {
+
+	// Screen may be nil.
+	// If Screen is not nil, we consider
+	// the buffer 'live', and any changes
+	// to Cells are written to Screen as well.
 	Screen tcell.Screen
+
+	Cells []termbox.Cell
 	Rect
 }
 
-func NewBuffer(w, h int) Buffer {
-	pp("top of NewBuffer, w=%v, h=%v", w, h)
-	b := TermboxBuffer()
-	b.Rect = Rect{0, 0, w, h}
-	return b
+// not live.
+func NewBuffer(w, h int) *Buffer {
+	return &Buffer{
+		Cells: make([]termbox.Cell, w*h),
+		Rect:  Rect{0, 0, w, h},
+	}
 }
 
-func TermboxBuffer() Buffer {
+// called to get the new size after a resize.
+func TermboxBuffer() *Buffer {
 	pp("top of TermboxBuffer")
 
 	termbox.Init()
 	s := termbox.GetScreen()
 	w, h := s.Size()
 
-	return Buffer{
+	return &Buffer{
+		Cells:  make([]termbox.Cell, w*h),
 		Screen: s,
 		Rect:   Rect{0, 0, w, h},
 	}
+
 }
 
 // Fills an area which is an intersection between buffer and 'dest' with 'proto'.
@@ -67,21 +79,32 @@ func (this *Buffer) Set(x, y int, proto termbox.Cell) {
 	if y < 0 || y >= this.Height {
 		return
 	}
-	st := termbox.MakeStyle(proto.Fg, proto.Bg)
-	this.Screen.SetContent(x, y, proto.Ch, nil, st)
+	off := this.Width*y + x
+	this.Cells[off] = proto
+
+	if this.Screen != nil {
+		st := termbox.MakeStyle(proto.Fg, proto.Bg)
+		this.Screen.SetContent(x, y, proto.Ch, nil, st)
+	}
 }
 
 // Resizes the Buffer, buffer contents are invalid after the resize.
 func (this *Buffer) Resize(nw, nh int) {
 	pp("top of Resize")
-	b := TermboxBuffer()
 
-	this.Screen = b.Screen
-	this.Rect = Rect{0, 0, nw, nh}
+	this.Width = nw
+	this.Height = nh
+
+	nsize := nw * nh
+	if nsize <= cap(this.Cells) {
+		this.Cells = this.Cells[:nsize]
+	} else {
+		this.Cells = make([]termbox.Cell, nsize)
+	}
 }
 
 func (this *Buffer) Blit(dstr Rect, srcx, srcy int, src *Buffer) {
-	pp("top of Blit")
+	pp("top of Blit, dstr: '%#v', src: '%#v'", dstr, src)
 
 	srcr := Rect{srcx, srcy, 0, 0}
 
@@ -109,27 +132,46 @@ func (this *Buffer) Blit(dstr Rect, srcx, srcy int, src *Buffer) {
 	}
 
 	// blit!
-	//srcstride := src.Width
-	//dststride := this.Width
+	srcstride := src.Width
+	dststride := this.Width
 	linew := dstr.Width
 	srcoff := src.Width*srcr.Y + srcr.X
 	dstoff := this.Width*dstr.Y + dstr.X
 
-	cp := func(x, y int) int {
-		mainc, combc, style, width := src.Screen.GetContent(x, y)
-		this.Screen.SetContent(x, y, mainc, combc, style)
-		return width - 1
+	for i := 0; i < dstr.Height; i++ {
+		linesrc := src.Cells[srcoff : srcoff+linew]
+		linedst := this.Cells[dstoff : dstoff+linew]
+		copy(linedst, linesrc)
+		srcoff += srcstride
+		dstoff += dststride
 	}
-	if srcoff > dstoff {
-		for i := 0; i < dstr.Height; i++ {
-			for j := 0; j < linew; j++ {
-				j += cp(i, j)
-			}
+
+	// and display, if we are live.
+	if this.Screen != nil {
+
+		cp := func(i, j int) int {
+			destY := i
+			destX := j
+			srcoff := src.Width*(srcr.Y+i) + srcr.X + j
+			from := src.Cells[srcoff]
+			this.Screen.SetContent(destX, destY,
+				from.Ch, nil,
+				termbox.MakeStyle(from.Fg, from.Bg))
+
+			width := runewidth.RuneWidth(from.Ch)
+			return width - 1
 		}
-	} else {
-		for i := dstr.Height - 1; i >= 0; i-- {
-			for j := linew - 1; j >= 0; j-- {
-				cp(i, j)
+		if srcoff > dstoff {
+			for i := 0; i < dstr.Height; i++ { // height, or y
+				for j := 0; j < linew; j++ { // width, or x
+					j += cp(i, j)
+				}
+			}
+		} else {
+			for i := dstr.Height - 1; i >= 0; i-- {
+				for j := linew - 1; j >= 0; j-- {
+					cp(i, j)
+				}
 			}
 		}
 	}
@@ -143,8 +185,10 @@ func (this *Buffer) unsafe_fill(dest Rect, proto termbox.Cell) {
 	st := termbox.MakeStyle(proto.Fg, proto.Bg)
 	for y := 0; y < dest.Height; y++ {
 		for x := 0; x < dest.Width; x++ {
-			//this.Cells[off+x] = proto
-			this.Screen.SetContent(dest.X+x, dest.Y+y, proto.Ch, nil, st)
+			this.Cells[off+x] = proto
+			if this.Screen != nil {
+				this.Screen.SetContent(dest.X+x, dest.Y+y, proto.Ch, nil, st)
+			}
 		}
 		off += stride
 	}
@@ -161,14 +205,15 @@ func (this *Buffer) draw_n_first_runes(off, n int, params *LabelParams, text []b
 		r, size := utf8.DecodeRune(text)
 
 		pp("draw_n_first_runes calling SetContent(%v, %v, r='%v') ", destX+(off-beg), destY, string(r))
-		this.Screen.SetContent(destX+(off-beg), destY, r, nil, st)
-		/*
-			this.Cells[off] = termbox.Cell{
-				Ch: r,
-				Fg: params.Fg,
-				Bg: params.Bg,
-			}
-		*/
+		this.Cells[off] = termbox.Cell{
+			Ch: r,
+			Fg: params.Fg,
+			Bg: params.Bg,
+		}
+		if this.Screen != nil {
+			this.Screen.SetContent(destX+(off-beg), destY, r, nil, st)
+		}
+
 		text = text[size:]
 		off++
 		n--
@@ -186,14 +231,15 @@ func (this *Buffer) draw_n_last_runes(off, n int, params *LabelParams, text []by
 	for n > 0 {
 		r, size := utf8.DecodeLastRune(text)
 
-		this.Screen.SetContent(destX-i, destY, r, nil, st)
-		/*
-			this.Cells[off] = termbox.Cell{
-				Ch: r,
-				Fg: params.Fg,
-				Bg: params.Bg,
-			}
-		*/
+		this.Cells[off] = termbox.Cell{
+			Ch: r,
+			Fg: params.Fg,
+			Bg: params.Bg,
+		}
+		if this.Screen != nil {
+			this.Screen.SetContent(destX-i, destY, r, nil, st)
+		}
+
 		text = text[:len(text)-size]
 		off--
 		n--
@@ -232,6 +278,8 @@ func skip_n_runes(x []byte, n int) []byte {
 
 func (this *Buffer) DrawLabel(dest Rect, params *LabelParams, text []byte) {
 	pp("top of DrawLabel, text = '%s', param='%#v'. dest='%#v'", string(text), params, dest)
+	live := this.Screen != nil
+
 	st := termbox.MakeStyle(params.Fg, params.Bg)
 
 	if dest.Height != 1 {
@@ -253,24 +301,30 @@ func (this *Buffer) DrawLabel(dest Rect, params *LabelParams, text []byte) {
 
 		// if user asks for ellipsis in the center, alignment doesn't matter
 		if params.CenterEllipsis {
-			this.Screen.SetContent(dest.X+dest.Width/2, dest.Y, ellipsis.Ch, nil, st)
-			//this.Cells[off+dest.Width/2] = ellipsis
+			this.Cells[off+dest.Width/2] = ellipsis
+			if live {
+				this.Screen.SetContent(dest.X+dest.Width/2, dest.Y, ellipsis.Ch, nil, st)
+			}
 		} else {
 			switch params.Align {
 			case AlignLeft:
-				this.Screen.SetContent(dest.X+dest.Width-1, dest.Y, ellipsis.Ch, nil, st)
-				//this.Cells[off+dest.Width-1] = ellipsis
+				this.Cells[off+dest.Width-1] = ellipsis
+				if live {
+					this.Screen.SetContent(dest.X+dest.Width-1, dest.Y, ellipsis.Ch, nil, st)
+				}
 			case AlignCenter:
-				//this.Cells[off] = ellipsis
-				//this.Cells[off+dest.Width-1] = ellipsis
-				this.Screen.SetContent(dest.X, dest.Y, ellipsis.Ch, nil, st)
-				this.Screen.SetContent(dest.X+dest.Width-1, dest.Y, ellipsis.Ch, nil, st)
-
+				this.Cells[off] = ellipsis
+				this.Cells[off+dest.Width-1] = ellipsis
+				if live {
+					this.Screen.SetContent(dest.X, dest.Y, ellipsis.Ch, nil, st)
+					this.Screen.SetContent(dest.X+dest.Width-1, dest.Y, ellipsis.Ch, nil, st)
+				}
 				n--
 			case AlignRight:
-				//this.Cells[off] = ellipsis
-				this.Screen.SetContent(dest.X, dest.Y, ellipsis.Ch, nil, st)
-
+				this.Cells[off] = ellipsis
+				if live {
+					this.Screen.SetContent(dest.X, dest.Y, ellipsis.Ch, nil, st)
+				}
 			}
 		}
 	}
