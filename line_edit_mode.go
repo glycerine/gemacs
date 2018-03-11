@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/gdamore/tcell/termbox"
-	//"github.com/nsf/termbox-go"
 	"github.com/nsf/tulib"
 	"strings"
 	"unicode/utf8"
