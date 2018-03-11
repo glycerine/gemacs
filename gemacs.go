@@ -390,6 +390,7 @@ func (g *godit) on_sys_key(ev *termbox.Event) {
 }
 
 func (g *godit) on_alt_key(ev *termbox.Event) bool {
+	pp("on_alt_key() called, ev = '%#v'", ev)
 	switch ev.Ch {
 	case 'g':
 		g.set_overlay_mode(init_line_edit_mode(g, g.goto_line_lemp()))

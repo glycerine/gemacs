@@ -147,6 +147,7 @@ type view struct {
 	highlight_bytes  []byte
 	highlight_ranges []byte_range
 	tags             []view_tag
+	pressesSinceEsc  int64
 }
 
 func new_view(ctx view_context, buf *buffer) *view {
@@ -1277,12 +1278,19 @@ func (v *view) on_key(ev *termbox.Event) {
 		v.on_vcommand(vcommand_yank, 0)
 	}
 
+	if ev.Key == termbox.KeyEsc {
+		pp("terbox.KeyEsc recognized!")
+		v.pressesSinceEsc = 0
+	} else {
+		v.pressesSinceEsc++
+	}
+
 	//pp("ev.Mod = '%v', termbox.ModAlt = %v, anded=%v. ev.Ch=%v", ev.Mod, termbox.ModAlt, ev.Mod&termbox.ModAlt, ev.Ch)
-	// gemacs:
+	// gemacs: space key =>
 	// view.go:1273 2018-03-10 23:48:09.673 -0600 CST ev.Mod = '0', termbox.ModAlt = 4, anded=0. ev.Ch=32
-	// godit:
+	// godit:  space key =>
 	// view.go:1234 2018-03-10 23:47:13.039 -0600 CST ev.Mod = '0', termbox.ModAlt = 1, anded=0. ev.Ch=0
-	if ev.Mod&termbox.ModAlt != 0 {
+	if ev.Mod&termbox.ModAlt != 0 || v.pressesSinceEsc == 1 {
 		switch ev.Ch {
 		case 'v':
 			v.on_vcommand(vcommand_move_view_half_backward, 0)
