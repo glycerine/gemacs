@@ -94,8 +94,9 @@ func (l *line_edit_mode) draw() {
 		l.prompt_w + 1, ui.Height - 1,
 		view.uibuf.Width, view.uibuf.Height,
 	}
-	pp("line_edit_mode.draw() about to blit into line_r from view.uibuf")
-	ui.Blit(line_r, 0, 0, view.uibuf)
+	pp("line_r is '%#v'", line_r)
+	pp("line_edit_mode.draw() about to blit into line_r from view.uibuf. view.uibuf='%#v'", view.uibuf)
+	ui.Blit(line_r, 0, 0, view.uibuf) // unnamed being written here.
 	if view.ac == nil {
 		return
 	}

@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime/debug"
 	"strconv"
 
 	"github.com/gdamore/tcell/termbox"
@@ -319,7 +320,7 @@ func (g *godit) draw() {
 
 	// draw overlay if any
 	if g.overlay != nil {
-		g.overlay.draw()
+		g.overlay.draw() // unnamed being written here.
 	}
 
 	// draw autocompletion
@@ -446,6 +447,9 @@ func (g *godit) consume_more_events() bool {
 	for {
 		select {
 		case ev := <-g.termbox_event:
+			pp("consume_more_events got ev='%#v'", ev)
+			select {}
+
 			ok := g.handle_event(&ev)
 			if !ok {
 				return false
@@ -492,6 +496,8 @@ func (g *godit) handle_event(ev *termbox.Event) bool {
 }
 
 func (g *godit) set_overlay_mode(m overlay_mode) {
+	pp("top of set_overlay_mode") // unnamed not yet written!
+
 	if g.overlay != nil {
 		g.overlay.exit()
 	}
@@ -522,8 +528,9 @@ func (g *godit) save_active_buffer(raw bool) {
 		return
 	}
 
-	g.set_overlay_mode(init_line_edit_mode(g, g.save_as_buffer_lemp(raw))) // unnamed is getting written here
+	g.set_overlay_mode(init_line_edit_mode(g, g.save_as_buffer_lemp(raw)))
 
+	pp("back from g.set_overlay_mode(). stack:\n'%s'\n", string(debug.Stack()))
 }
 
 // "lemp" stands for "line edit mode params"

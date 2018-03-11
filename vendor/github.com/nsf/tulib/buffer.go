@@ -107,6 +107,15 @@ func (this *Buffer) Resize(nw, nh int) {
 
 func (this *Buffer) Blit(dstr Rect, srcx, srcy int, src *Buffer) {
 	pp("top of Blit, dstr: '%#v', srcx: '%v', srcy: '%v'", dstr, srcx, srcy)
+	s := ""
+	cmp := "unnamed"
+	off := srcy*src.Width + srcx
+	for i := off; i < off+len(cmp); i++ {
+		s += string(src.Cells[i].Ch)
+	}
+	if s == cmp {
+		pp("Blit found unnamed. writing '%s'. where=\n%s\n", s, string(debug.Stack()))
+	}
 
 	srcr := Rect{srcx, srcy, 0, 0}
 
@@ -133,6 +142,8 @@ func (this *Buffer) Blit(dstr Rect, srcx, srcy int, src *Buffer) {
 		return
 	}
 
+	pp("Blit is writing to dstr='%#v'", dstr)
+
 	// blit!
 	srcstride := src.Width
 	dststride := this.Width
@@ -152,10 +163,11 @@ func (this *Buffer) Blit(dstr Rect, srcx, srcy int, src *Buffer) {
 	if this.Screen != nil {
 
 		cp := func(i, j int) int {
-			destY := i
-			destX := j
+			destY := dstr.Y + i
+			destX := dstr.X + j
 			srcoff := src.Width*(srcr.Y+i) + srcr.X + j
 			from := src.Cells[srcoff]
+			pp("Blit about to SetContent at destX=%v, destY=%v, r='%v'", destX, destY, from.Ch)
 			this.Screen.SetContent(destX, destY,
 				from.Ch, nil,
 				termbox.MakeStyle(from.Fg, from.Bg))
