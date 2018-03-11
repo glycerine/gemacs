@@ -140,7 +140,7 @@ type view struct {
 	ctx              view_context
 	tmpbuf           bytes.Buffer // temporary buffer for status bar text
 	buf              *buffer      // currently displayed buffer
-	uibuf            tulib.Buffer
+	uibuf            *tulib.Buffer
 	dirty            dirty_flag
 	oneline          bool
 	ac               *autocompl
@@ -152,9 +152,10 @@ type view struct {
 }
 
 func new_view(ctx view_context, buf *buffer) *view {
+	pp("new_view called with buf='%#v', ctx = '%#v'", buf, ctx)
 	v := new(view)
 	v.ctx = ctx
-	v.uibuf = tulib.NewBuffer(1, 1)
+	v.uibuf = tulib.NewBuffer(1, 1) // the only place NewBuffer is called.
 	v.attach(buf)
 	v.ac_decide = default_ac_decide
 	v.highlight_ranges = make([]byte_range, 0, 10)
@@ -251,6 +252,8 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 	data := line.data
 	y := coff / v.uibuf.Width
 
+	live := v.uibuf.Screen != nil
+
 	if len(v.highlight_bytes) > 0 {
 		v.find_highlight_ranges_for_line(data)
 	}
@@ -265,17 +268,18 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 		}
 
 		if rx >= v.uibuf.Width {
-			//last := coff + v.uibuf.Width - 1
+			last := coff + v.uibuf.Width - 1
 
-			st := termbox.MakeStyle(termbox.ColorDefault, termbox.ColorDefault)
-			v.uibuf.Screen.SetContent(v.uibuf.Width-1, y, '>', nil, st)
-			/*
-				v.uibuf.Cells[last] = termbox.Cell{
-					Ch: '>',
-					Fg: termbox.ColorDefault,
-					Bg: termbox.ColorDefault,
-				}
-			*/
+			v.uibuf.Cells[last] = termbox.Cell{
+				Ch: '>',
+				Fg: termbox.ColorDefault,
+				Bg: termbox.ColorDefault,
+			}
+			if live {
+				st := termbox.MakeStyle(termbox.ColorDefault, termbox.ColorDefault)
+				v.uibuf.Screen.SetContent(v.uibuf.Width-1, y, '>', nil, st)
+			}
+
 			break
 		}
 
@@ -291,23 +295,25 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 
 				if rx >= 0 {
 					cell := v.make_cell(line_num, bx, ' ')
-					st := termbox.MakeStyle(cell.Fg, cell.Bg)
-					v.uibuf.Screen.SetContent(rx, y, ' ', nil, st)
-					//v.uibuf.Cells[coff+rx] = cell
+					v.uibuf.Cells[coff+rx] = cell
+					if live {
+						st := termbox.MakeStyle(cell.Fg, cell.Bg)
+						v.uibuf.Screen.SetContent(rx, y, ' ', nil, st)
+					}
 				}
 			}
 		case r < 32:
 			// invisible chars like ^R or ^@
 			red := termbox.MakeStyle(termbox.ColorRed, termbox.ColorDefault)
 			if rx >= 0 {
-				v.uibuf.Screen.SetContent(rx, y, '^', nil, red)
-				/*
-					                 v.uibuf.Cells[coff+rx] = termbox.Cell{
-										Ch: '^',
-										Fg: termbox.ColorRed,
-										Bg: termbox.ColorDefault,
-									}
-				*/
+				v.uibuf.Cells[coff+rx] = termbox.Cell{
+					Ch: '^',
+					Fg: termbox.ColorRed,
+					Bg: termbox.ColorDefault,
+				}
+				if live {
+					v.uibuf.Screen.SetContent(rx, y, '^', nil, red)
+				}
 			}
 			x++
 			rx = x - line_voffset
@@ -315,23 +321,25 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 				break
 			}
 			if rx >= 0 {
-				v.uibuf.Screen.SetContent(rx, y, invisible_rune_table[r], nil, red)
-				/*
-					v.uibuf.Cells[coff+rx] = termbox.Cell{
-						Ch: invisible_rune_table[r],
-						Fg: termbox.ColorRed,
-						Bg: termbox.ColorDefault,
-					}
-				*/
+				v.uibuf.Cells[coff+rx] = termbox.Cell{
+					Ch: invisible_rune_table[r],
+					Fg: termbox.ColorRed,
+					Bg: termbox.ColorDefault,
+				}
+				if live {
+					v.uibuf.Screen.SetContent(rx, y, invisible_rune_table[r], nil, red)
+				}
 			}
 			x++
 		default:
 			if rx >= 0 {
 				cell := v.make_cell(line_num, bx, r)
-				st := termbox.MakeStyle(cell.Fg, cell.Bg)
-				v.uibuf.Screen.SetContent(rx, y, r, nil, st)
-				//v.uibuf.Cells[coff+rx] = v.make_cell(
-				//	line_num, bx, r)
+				v.uibuf.Cells[coff+rx] = v.make_cell(
+					line_num, bx, r)
+				if live {
+					st := termbox.MakeStyle(cell.Fg, cell.Bg)
+					v.uibuf.Screen.SetContent(rx, y, r, nil, st)
+				}
 			}
 			x += rune_width(r)
 		}
@@ -340,15 +348,15 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 	}
 
 	if line_voffset != 0 {
-		st := termbox.MakeStyle(termbox.ColorDefault, termbox.ColorDefault)
-		v.uibuf.Screen.SetContent(0, y, '<', nil, st)
-		/*
-			v.uibuf.Cells[coff] = termbox.Cell{
-				Ch: '<',
-				Fg: termbox.ColorDefault,
-				Bg: termbox.ColorDefault,
-			}
-		*/
+		v.uibuf.Cells[coff] = termbox.Cell{
+			Ch: '<',
+			Fg: termbox.ColorDefault,
+			Bg: termbox.ColorDefault,
+		}
+		if live {
+			st := termbox.MakeStyle(termbox.ColorDefault, termbox.ColorDefault)
+			v.uibuf.Screen.SetContent(0, y, '<', nil, st)
+		}
 	}
 }
 

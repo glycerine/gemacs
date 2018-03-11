@@ -62,7 +62,7 @@ func (k key_event) to_termbox_event() termbox.Event {
 //----------------------------------------------------------------------------
 
 type godit struct {
-	uibuf             tulib.Buffer
+	uibuf             *tulib.Buffer
 	active            *view_tree // this one is always a leaf node
 	views             *view_tree // a root node
 	buffers           []*buffer
@@ -286,13 +286,6 @@ func (g *godit) kill_all_views_but_active() {
 func (g *godit) resize() {
 	pp("top of resize, g='%#v'", g)
 	g.uibuf = tulib.TermboxBuffer() // jea: only use of TermboxBuffer is here.
-
-	/*
-		g.uibuf.Screen.SetStyle(tcell.StyleDefault.
-			Background(tcell.ColorBlack).
-			Foreground(tcell.ColorWhite))
-	*/
-
 	views_area := g.uibuf.Rect
 	views_area.Height -= 1 // reserve space for command line
 	g.views.resize(views_area)
@@ -308,7 +301,7 @@ func (g *godit) draw_autocompl() {
 	proposals := view.ac.actual_proposals()
 	if len(proposals) > 0 {
 		cx, cy := view.cursor_position_for(view.ac.origin)
-		view.ac.draw_onto(&g.uibuf, x+cx, y+cy)
+		view.ac.draw_onto(g.uibuf, x+cx, y+cy)
 	}
 }
 
@@ -355,7 +348,7 @@ func (g *godit) draw_status() {
 
 func (g *godit) composite_recursively(v *view_tree) {
 	if v.leaf != nil {
-		g.uibuf.Blit(v.Rect, 0, 0, &v.leaf.uibuf)
+		g.uibuf.Blit(v.Rect, 0, 0, v.leaf.uibuf)
 		return
 	}
 
@@ -508,6 +501,7 @@ func (g *godit) set_overlay_mode(m overlay_mode) {
 func (g *godit) save_active_buffer(raw bool) {
 	v := g.active.leaf
 	b := v.buf
+	pp("top of save_active_buffer(), g.active.leaf.buf.path = '%v'", b.path)
 
 	if b.path != "" {
 		if b.synced_with_disk() {
