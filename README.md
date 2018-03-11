@@ -23,7 +23,9 @@ repeat that action. But as soon as some other key was pressed you quit this
 micromode and everything is back to normal again. The idea of micromode is used
 in gemacs a lot.
 
- --== List of keybindings ==--
+# List of keybindings
+
+~~~
 
 Basic things:
   C-g              - Universal cancel button
@@ -105,4 +107,4 @@ Advanced:
   C-x =            - Info about character under the cursor
   C-x !            - Filter region through an external command [prompt]
 
-
+~~~
