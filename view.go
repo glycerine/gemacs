@@ -1196,7 +1196,7 @@ func (v *view) on_vcommand(cmd vcommand, arg rune) {
 }
 
 func (v *view) on_key(ev *termbox.Event) {
-	pp("view on_key called, ev.Key = '%#v', termbox.ModAlt=%v", ev, termbox.ModAlt)
+	//pp("view on_key called, ev.Key = '%#v', termbox.ModAlt=%v", ev, termbox.ModAlt)
 	//pp("ev.Mod = '%v', termbox.ModAlt = %v, anded=%v. ev.Ch=%v. ev='%#v'", ev.Mod, termbox.ModAlt, ev.Mod&termbox.ModAlt, ev.Ch, ev) // ev.Ch = 0, 2x.
 
 	/* space produces, in gemacs:
@@ -1279,10 +1279,14 @@ func (v *view) on_key(ev *termbox.Event) {
 	}
 
 	if ev.Key == termbox.KeyEsc {
-		pp("terbox.KeyEsc recognized!")
+		//pp("terbox.KeyEsc recognized!")
 		v.pressesSinceEsc = 0
 	} else {
 		v.pressesSinceEsc++
+		if v.pressesSinceEsc < 0 {
+			// wrapped. unlikely, but handle it.
+			v.pressesSinceEsc = 4
+		}
 	}
 
 	//pp("ev.Mod = '%v', termbox.ModAlt = %v, anded=%v. ev.Ch=%v", ev.Mod, termbox.ModAlt, ev.Mod&termbox.ModAlt, ev.Ch)
