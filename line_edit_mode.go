@@ -1,6 +1,8 @@
 package main
 
 import (
+	"runtime/debug"
+
 	"github.com/gdamore/tcell/termbox"
 	"github.com/nsf/tulib"
 	"strings"
@@ -92,6 +94,7 @@ func (l *line_edit_mode) draw() {
 		l.prompt_w + 1, ui.Height - 1,
 		view.uibuf.Width, view.uibuf.Height,
 	}
+	pp("line_edit_mode.draw() about to blit into line_r from view.uibuf")
 	ui.Blit(line_r, 0, 0, view.uibuf)
 	if view.ac == nil {
 		return
@@ -120,6 +123,10 @@ func init_line_edit_mode(godit *godit, p line_edit_mode_params) *line_edit_mode 
 	l := new(line_edit_mode)
 	l.godit = godit
 	l.line_edit_mode_params = p
+
+	if p.initial_content == "unnamed" {
+		pp("p.initial_content = '%s' where:\n%s\n", p.initial_content, string(debug.Stack()))
+	}
 	l.linebuf, _ = new_buffer(strings.NewReader(p.initial_content))
 	l.lineview = new_view(godit.view_context(), l.linebuf)
 	l.lineview.oneline = true          // enable one line mode

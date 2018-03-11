@@ -288,6 +288,7 @@ func (g *godit) resize() {
 }
 
 func (g *godit) draw_autocompl() {
+
 	view := g.active.leaf
 	x, y := g.active.X, g.active.Y
 	if view.ac == nil {
@@ -296,9 +297,13 @@ func (g *godit) draw_autocompl() {
 
 	proposals := view.ac.actual_proposals()
 	if len(proposals) > 0 {
+		// never hit. during unnamed save.
+		//pp("draw_autocmpl() has proposals")
+		//select {}
 		cx, cy := view.cursor_position_for(view.ac.origin)
 		view.ac.draw_onto(g.uibuf, x+cx, y+cy)
 	}
+
 }
 
 func (g *godit) draw() {
@@ -517,7 +522,8 @@ func (g *godit) save_active_buffer(raw bool) {
 		return
 	}
 
-	g.set_overlay_mode(init_line_edit_mode(g, g.save_as_buffer_lemp(raw)))
+	g.set_overlay_mode(init_line_edit_mode(g, g.save_as_buffer_lemp(raw))) // unnamed is getting written here
+
 }
 
 // "lemp" stands for "line edit mode params"
