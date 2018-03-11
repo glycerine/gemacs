@@ -11,16 +11,6 @@ import (
 
 var pp = verb.PP
 
-func init() {
-	/*
-		f, err := os.Create("./log.godit.debug")
-		if err != nil {
-			panic(err)
-		}
-		verb.OurStdout = f
-	*/
-}
-
 type Alignment int
 
 const (

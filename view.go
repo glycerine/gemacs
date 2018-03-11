@@ -150,7 +150,6 @@ type view struct {
 }
 
 func new_view(ctx view_context, buf *buffer) *view {
-	//pp("new_view called with buf='%#v', ctx = '%#v'", buf, ctx)
 	v := new(view)
 	v.ctx = ctx
 	v.uibuf = tulib.NewBuffer(1, 1) // the only place NewBuffer is called.
@@ -1144,7 +1143,7 @@ func (v *view) on_vcommand(cmd vcommand, arg rune) {
 	case vcommand_recenter:
 		v.center_view_on_cursor()
 	case vcommand_insert_rune:
-		v.insert_rune(arg)
+		v.insert_rune(arg) // space 1st time. space 2nd time.
 	case vcommand_yank:
 		v.yank()
 	case vcommand_delete_rune_backward:
@@ -1196,6 +1195,23 @@ func (v *view) on_vcommand(cmd vcommand, arg rune) {
 }
 
 func (v *view) on_key(ev *termbox.Event) {
+	//pp("view on_key called, ev.Key = '%v'. ev.Ch=%v, ev.Mod=%v", ev.Key, ev.Ch, ev.Mod)                                              // called once. ev.Key == 32
+	//pp("ev.Mod = '%v', termbox.ModAlt = %v, anded=%v. ev.Ch=%v. ev='%#v'", ev.Mod, termbox.ModAlt, ev.Mod&termbox.ModAlt, ev.Ch, ev) // ev.Ch = 0, 2x.
+
+	/* space produces, in gemacs:
+		   view.go:1204 2018-03-11 00:00:13.657 -0600 CST view on_key called, ev.Key = '32'. ev.Ch=32, ev.Mod=0
+		   view.go:1205 2018-03-11 00:00:13.657 -0600 CST ev.Mod = '0', termbox.ModAlt = 4, anded=0. ev.Ch=32. ev='&termbox.Event{Type:0x1, Mod:0, Key:32, Ch:32, Width:0, Height:0, Err:error(nil), MouseX:0, MouseY:0, N:0}'
+
+	versus/compared to, a space in godit:
+
+	   view.go:1169 2018-03-10 23:59:00.877 -0600 CST view on_key called, ev.Key = '32'. ev.Ch=0, ev.Mod=0
+
+	   view.go:1170 2018-03-10 23:59:00.878 -0600 CST ev.Mod = '0', termbox.ModAlt = 1, anded=0. ev.Ch=0. ev='&termbox.Event{Type:0x0, Mod:0x0, Key:0x20, Ch:0, Width:0, Height:0, Err:error(nil), MouseX:0, MouseY:0, N:1}'
+
+	   view.go:1237 2018-03-10 23:59:00.878 -0600 CST ev.Mod = '0', termbox.ModAlt = 1, anded=0. ev.Ch=0
+
+	*/
+
 	switch ev.Key {
 	case termbox.KeyCtrlF, termbox.KeyArrowRight:
 		v.on_vcommand(vcommand_move_cursor_forward, 0)
@@ -1224,7 +1240,7 @@ func (v *view) on_key(ev *termbox.Event) {
 	case termbox.KeyCtrlSlash:
 		v.on_vcommand(vcommand_undo, 0)
 	case termbox.KeySpace:
-		v.on_vcommand(vcommand_insert_rune, ' ')
+		v.on_vcommand(vcommand_insert_rune, ' ') // space, 1st time.
 	case termbox.KeyEnter, termbox.KeyCtrlJ:
 		c := '\n'
 		if ev.Key == termbox.KeyEnter {
@@ -1261,6 +1277,11 @@ func (v *view) on_key(ev *termbox.Event) {
 		v.on_vcommand(vcommand_yank, 0)
 	}
 
+	//pp("ev.Mod = '%v', termbox.ModAlt = %v, anded=%v. ev.Ch=%v", ev.Mod, termbox.ModAlt, ev.Mod&termbox.ModAlt, ev.Ch)
+	// gemacs:
+	// view.go:1273 2018-03-10 23:48:09.673 -0600 CST ev.Mod = '0', termbox.ModAlt = 4, anded=0. ev.Ch=32
+	// godit:
+	// view.go:1234 2018-03-10 23:47:13.039 -0600 CST ev.Mod = '0', termbox.ModAlt = 1, anded=0. ev.Ch=0
 	if ev.Mod&termbox.ModAlt != 0 {
 		switch ev.Ch {
 		case 'v':
@@ -1285,7 +1306,13 @@ func (v *view) on_key(ev *termbox.Event) {
 			v.on_vcommand(vcommand_word_to_title, 0)
 		}
 	} else if ev.Ch != 0 {
-		v.on_vcommand(vcommand_insert_rune, ev.Ch)
+		// jea: in godit, space had ev.Ch == 0, so didn't get here.
+		// However in tcell/compat mode, ev.Ch == 32.
+		// Not sure what else is relying on this, so for now
+		// just don't double up on spaces.
+		if ev.Ch != 32 {
+			v.on_vcommand(vcommand_insert_rune, ev.Ch) // space 2nd time only.
+		}
 	}
 }
 
