@@ -1195,7 +1195,7 @@ func (v *view) on_vcommand(cmd vcommand, arg rune) {
 }
 
 func (v *view) on_key(ev *termbox.Event) {
-	//pp("view on_key called, ev.Key = '%v'. ev.Ch=%v, ev.Mod=%v", ev.Key, ev.Ch, ev.Mod)                                              // called once. ev.Key == 32
+	pp("view on_key called, ev.Key = '%#v', termbox.ModAlt=%v", ev, termbox.ModAlt)
 	//pp("ev.Mod = '%v', termbox.ModAlt = %v, anded=%v. ev.Ch=%v. ev='%#v'", ev.Mod, termbox.ModAlt, ev.Mod&termbox.ModAlt, ev.Ch, ev) // ev.Ch = 0, 2x.
 
 	/* space produces, in gemacs:
