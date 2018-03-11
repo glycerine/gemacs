@@ -1,10 +1,6 @@
 package tulib
 
 import (
-	"os"
-
-	"runtime/debug"
-
 	"github.com/gdamore/tcell"
 	"github.com/gdamore/tcell/termbox"
 	"unicode/utf8"
@@ -16,11 +12,13 @@ import (
 var pp = verb.PP
 
 func init() {
-	f, err := os.Create("./log.godit.debug")
-	if err != nil {
-		panic(err)
-	}
-	verb.OurStdout = f
+	/*
+		f, err := os.Create("./log.godit.debug")
+		if err != nil {
+			panic(err)
+		}
+		verb.OurStdout = f
+	*/
 }
 
 type Alignment int
@@ -53,7 +51,7 @@ func NewBuffer(w, h int) *Buffer {
 
 // called to get the new size after a resize.
 func TermboxBuffer() *Buffer {
-	pp("top of TermboxBuffer")
+	//pp("top of TermboxBuffer")
 
 	termbox.Init()
 	s := termbox.GetScreen()
@@ -74,7 +72,7 @@ func (this *Buffer) Fill(dst Rect, proto termbox.Cell) {
 
 // Sets a cell at specified position
 func (this *Buffer) Set(x, y int, proto termbox.Cell) {
-	pp("top of Set(x=%v, y=%v). this='%#v'", x, y, this)
+	//pp("top of Set(x=%v, y=%v). this='%#v'", x, y, this)
 	if x < 0 || x >= this.Width {
 		return
 	}
@@ -92,7 +90,7 @@ func (this *Buffer) Set(x, y int, proto termbox.Cell) {
 
 // Resizes the Buffer, buffer contents are invalid after the resize.
 func (this *Buffer) Resize(nw, nh int) {
-	pp("top of Resize, nw=%v, nh=%v", nw, nh)
+	//pp("top of Resize, nw=%v, nh=%v", nw, nh)
 
 	this.Width = nw
 	this.Height = nh
@@ -106,16 +104,7 @@ func (this *Buffer) Resize(nw, nh int) {
 }
 
 func (this *Buffer) Blit(dstr Rect, srcx, srcy int, src *Buffer) {
-	pp("top of Blit, dstr: '%#v', srcx: '%v', srcy: '%v'", dstr, srcx, srcy)
-	s := ""
-	cmp := "unnamed"
-	off := srcy*src.Width + srcx
-	for i := off; i < off+len(cmp); i++ {
-		s += string(src.Cells[i].Ch)
-	}
-	if s == cmp {
-		pp("Blit found unnamed. writing '%s'. where=\n%s\n", s, string(debug.Stack()))
-	}
+	//pp("top of Blit, dstr: '%#v', srcx: '%v', srcy: '%v'", dstr, srcx, srcy)
 
 	srcr := Rect{srcx, srcy, 0, 0}
 
@@ -138,11 +127,11 @@ func (this *Buffer) Blit(dstr Rect, srcx, srcy int, src *Buffer) {
 	dstr.Height = srcr.Height
 
 	if dstr.IsEmpty() {
-		pp("Blit: empty dstr, nothing to do.")
+		//pp("Blit: empty dstr, nothing to do.")
 		return
 	}
 
-	pp("Blit is writing to dstr='%#v'", dstr)
+	//pp("Blit is writing to dstr='%#v'", dstr)
 
 	// blit!
 	srcstride := src.Width
@@ -167,7 +156,7 @@ func (this *Buffer) Blit(dstr Rect, srcx, srcy int, src *Buffer) {
 			destX := dstr.X + j
 			srcoff := src.Width*(srcr.Y+i) + srcr.X + j
 			from := src.Cells[srcoff]
-			pp("Blit about to SetContent at destX=%v, destY=%v, r='%v'", destX, destY, from.Ch)
+			//pp("Blit about to SetContent at destX=%v, destY=%v, r='%v'", destX, destY, from.Ch)
 			this.Screen.SetContent(destX, destY,
 				from.Ch, nil,
 				termbox.MakeStyle(from.Fg, from.Bg))
@@ -193,7 +182,7 @@ func (this *Buffer) Blit(dstr Rect, srcx, srcy int, src *Buffer) {
 
 // Unsafe part of the fill operation, doesn't check for bounds.
 func (this *Buffer) unsafe_fill(dest Rect, proto termbox.Cell) {
-	pp("unsafe fill proto='%#v', dest='%#v'", proto, dest)
+	//pp("unsafe fill proto='%#v', dest='%#v'", proto, dest)
 	stride := this.Width
 	off := this.Width*dest.Y + dest.X
 	st := termbox.MakeStyle(proto.Fg, proto.Bg)
@@ -211,14 +200,14 @@ func (this *Buffer) unsafe_fill(dest Rect, proto termbox.Cell) {
 // draws from left to right, 'off' is the beginning position
 // (DrawLabel uses that method)
 func (this *Buffer) draw_n_first_runes(off, n int, params *LabelParams, text []byte, destX, destY int) {
-	pp("top of draw_n_first_runes. destX=%v, destY=%v, off=%v, n=%v", destX, destY, off, n)
+	//pp("top of draw_n_first_runes. destX=%v, destY=%v, off=%v, n=%v", destX, destY, off, n)
 
 	st := termbox.MakeStyle(params.Fg, params.Bg)
 	beg := off
 	for n > 0 {
 		r, size := utf8.DecodeRune(text)
 
-		pp("draw_n_first_runes calling SetContent(%v, %v, r='%v') ", destX+(off-beg), destY, string(r))
+		//pp("draw_n_first_runes calling SetContent(%v, %v, r='%v') ", destX+(off-beg), destY, string(r))
 		this.Cells[off] = termbox.Cell{
 			Ch: r,
 			Fg: params.Fg,
@@ -237,7 +226,7 @@ func (this *Buffer) draw_n_first_runes(off, n int, params *LabelParams, text []b
 // draws from right to left, 'off' is the end position
 // (DrawLabel uses that method)
 func (this *Buffer) draw_n_last_runes(off, n int, params *LabelParams, text []byte, destX, destY int) {
-	pp("top of draw_n_last_runes")
+	//pp("top of draw_n_last_runes")
 
 	st := termbox.MakeStyle(params.Fg, params.Bg)
 
@@ -291,17 +280,8 @@ func skip_n_runes(x []byte, n int) []byte {
 }
 
 func (this *Buffer) DrawLabel(dest Rect, params *LabelParams, text []byte) {
-	pp("top of DrawLabel, text = '%s', param='%#v'. dest='%#v'", string(text), params, dest)
+	//pp("top of DrawLabel, text = '%s', param='%#v'. dest='%#v'", string(text), params, dest)
 
-	if string(text) == "File to save in:" {
-		pp("not freezing to see if 'unnamed' comes before or after the 'File to save in:' DrawLabel() call. apparently it comes *after*")
-
-		pp(string(debug.Stack()))
-
-		defer func() {
-			pp("done with DrawLabel that did the 'File to save in:' DrawLabel() call.")
-		}()
-	}
 	live := this.Screen != nil
 
 	st := termbox.MakeStyle(params.Fg, params.Bg)
