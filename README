@@ -1,36 +1,32 @@
- --== Godit - a very religious text editor ==--
+# gemacs: an emacs written in Go
+
+Gemacs is derived from Godit. https://github.com/nsf/godit,
+and adapted to use `gdamore/tcell` instead of `termbox-go`.
 
 Screenshots:
 
  * http://nosmileface.ru/images/godit-linux1.png
  * http://nosmileface.ru/images/godit-linux2.png
 
-I call it religious, because there is a strong faith in the "one true way"
-of doing things. By that I mean things like: "the tab size is always an
-equivalent to 8 spaces/characters" or "each line ends with '\n' symbol and
-someone should end this '\r\n' madness" or "text files are always utf-8
-encoded". Most editors provide customizable options for these things, but
-godit takes a different approach in that area and has no settings at all. So,
-that concludes the ideology behind godit.
 
-If you're interested in what godit feels like, it would be fair to say that it
-is an emacsish lightweight text editor. The godit uses many of the emacs key
+Gemacs is an emacs-ish lightweight text editor.
+
+Gemacs uses many of the emacs key
 bindings and operates using a notion of "micromodes". It's easier to explain
 what a micromode is by a simple example. Let's take the keyboard macros feature
-from both emacs and godit. You can start recording a macro using `C-x (` key
+from both emacs and gemacs. You can start recording a macro using `C-x (` key
 combination and then when you're ready to start repeating it, you do the
 following: `C-x e (e...)`. Not only `C-x e` ends the recording of a macro, it
 executes the macro once and enters a micromode, where typing `e` again, will
 repeat that action. But as soon as some other key was pressed you quit this
 micromode and everything is back to normal again. The idea of micromode is used
-in godit a lot.
-
+in gemacs a lot.
 
  --== List of keybindings ==--
 
 Basic things:
   C-g              - Universal cancel button
-  C-x C-c          - Quit from the godit
+  C-x C-c          - Quit from the gemacs
   C-x C-s          - Save file [prompt maybe]
   C-x S            - Save file (raw) [prompt maybe]
   C-x M-s          - Save file as [prompt]
@@ -109,13 +105,3 @@ Advanced:
   C-x !            - Filter region through an external command [prompt]
 
 
- --== Current development state==--
-
-I'm still in process of designing some parts of it. Bits of functionality are
-missing, but frankly I write godit in godit already and I use godit for
-everything else on my system (EDITOR=godit). This README was written in godit
-from scratch, I write commit messages in godit, I write code in godit, I write
-configs and scripts in godit. The editor is definitely usable, but it is
-certain that some corner cases are not covered. Just try it, perhaps you would
-like it. Oh and I'm very picky about feature suggestions at the moment,
-suggest, but don't expect too much.
