@@ -150,7 +150,7 @@ type view struct {
 }
 
 func new_view(ctx view_context, buf *buffer) *view {
-	pp("new_view called with buf='%#v', ctx = '%#v'", buf, ctx)
+	//pp("new_view called with buf='%#v', ctx = '%#v'", buf, ctx)
 	v := new(view)
 	v.ctx = ctx
 	v.uibuf = tulib.NewBuffer(1, 1) // the only place NewBuffer is called.
