@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	//"github.com/nsf/termbox-go"
-	"github.com/gdamore/tcell"
+	//"github.com/gdamore/tcell"
 	"github.com/gdamore/tcell/termbox"
 
 	"github.com/glycerine/verb"
@@ -287,9 +287,11 @@ func (g *godit) resize() {
 	pp("top of resize, g='%#v'", g)
 	g.uibuf = tulib.TermboxBuffer() // jea: only use of TermboxBuffer is here.
 
-	g.uibuf.Screen.SetStyle(tcell.StyleDefault.
-		Background(tcell.ColorBlack).
-		Foreground(tcell.ColorWhite))
+	/*
+		g.uibuf.Screen.SetStyle(tcell.StyleDefault.
+			Background(tcell.ColorBlack).
+			Foreground(tcell.ColorWhite))
+	*/
 
 	views_area := g.uibuf.Rect
 	views_area.Height -= 1 // reserve space for command line

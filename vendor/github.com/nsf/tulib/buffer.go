@@ -73,15 +73,16 @@ func (this *Buffer) Set(x, y int, proto termbox.Cell) {
 
 // Resizes the Buffer, buffer contents are invalid after the resize.
 func (this *Buffer) Resize(nw, nh int) {
-	//pp("top of Resize")
+	pp("top of Resize")
 	b := TermboxBuffer()
 
 	this.Screen = b.Screen
-	this.Rect = b.Rect
+	this.Rect = Rect{0, 0, nw, nh}
 }
 
 func (this *Buffer) Blit(dstr Rect, srcx, srcy int, src *Buffer) {
-	//pp("top of Blit")
+	pp("top of Blit")
+
 	srcr := Rect{srcx, srcy, 0, 0}
 
 	// first adjust 'srcr' if 'dstr' has negatives
@@ -103,6 +104,7 @@ func (this *Buffer) Blit(dstr Rect, srcx, srcy int, src *Buffer) {
 	dstr.Height = srcr.Height
 
 	if dstr.IsEmpty() {
+		pp("Blit: empty dstr, nothing to do.")
 		return
 	}
 
@@ -135,7 +137,7 @@ func (this *Buffer) Blit(dstr Rect, srcx, srcy int, src *Buffer) {
 
 // Unsafe part of the fill operation, doesn't check for bounds.
 func (this *Buffer) unsafe_fill(dest Rect, proto termbox.Cell) {
-	//pp("unsafe fill proto='%#v', dest='%#v'", proto, dest)
+	pp("unsafe fill proto='%#v', dest='%#v'", proto, dest)
 	stride := this.Width
 	off := this.Width*dest.Y + dest.X
 	st := termbox.MakeStyle(proto.Fg, proto.Bg)
@@ -151,13 +153,14 @@ func (this *Buffer) unsafe_fill(dest Rect, proto termbox.Cell) {
 // draws from left to right, 'off' is the beginning position
 // (DrawLabel uses that method)
 func (this *Buffer) draw_n_first_runes(off, n int, params *LabelParams, text []byte, destX, destY int) {
-	//pp("top of draw_n_first_runes")
+	pp("top of draw_n_first_runes. destX=%v, destY=%v, off=%v, n=%v", destX, destY, off, n)
 
 	st := termbox.MakeStyle(params.Fg, params.Bg)
 	beg := off
 	for n > 0 {
 		r, size := utf8.DecodeRune(text)
 
+		pp("draw_n_first_runes calling SetContent(%v, %v, r='%v') ", destX+(off-beg), destY, string(r))
 		this.Screen.SetContent(destX+(off-beg), destY, r, nil, st)
 		/*
 			this.Cells[off] = termbox.Cell{
@@ -175,7 +178,7 @@ func (this *Buffer) draw_n_first_runes(off, n int, params *LabelParams, text []b
 // draws from right to left, 'off' is the end position
 // (DrawLabel uses that method)
 func (this *Buffer) draw_n_last_runes(off, n int, params *LabelParams, text []byte, destX, destY int) {
-	//pp("top of draw_n_last_runes")
+	pp("top of draw_n_last_runes")
 
 	st := termbox.MakeStyle(params.Fg, params.Bg)
 
@@ -228,7 +231,7 @@ func skip_n_runes(x []byte, n int) []byte {
 }
 
 func (this *Buffer) DrawLabel(dest Rect, params *LabelParams, text []byte) {
-	//pp("top of DrawLabel, text = '%s', param='%#v'", string(text), params)
+	pp("top of DrawLabel, text = '%s', param='%#v'. dest='%#v'", string(text), params, dest)
 	st := termbox.MakeStyle(params.Fg, params.Bg)
 
 	if dest.Height != 1 {
@@ -281,7 +284,7 @@ func (this *Buffer) DrawLabel(dest Rect, params *LabelParams, text []byte) {
 		secondhalf := dest.Width - 1 - firsthalf
 		this.draw_n_first_runes(off, firsthalf, params, text, dest.X, dest.Y)
 		off += dest.Width - 1
-		this.draw_n_last_runes(off, secondhalf, params, text, dest.X+off, dest.Y)
+		this.draw_n_last_runes(off, secondhalf, params, text, dest.X+dest.Width-1, dest.Y)
 		return
 	}
 
@@ -291,15 +294,15 @@ func (this *Buffer) DrawLabel(dest Rect, params *LabelParams, text []byte) {
 	case AlignCenter:
 		if textlen == n {
 			off += (dest.Width - n) / 2
-			this.draw_n_first_runes(off, n, params, text, dest.X+off, dest.Y)
+			this.draw_n_first_runes(off, n, params, text, dest.X+(dest.Width-n)/2, dest.Y)
 		} else {
 			off++
 			mid := (textlen - n) / 2
 			text = skip_n_runes(text, mid)
-			this.draw_n_first_runes(off, n, params, text, dest.X+off, dest.Y)
+			this.draw_n_first_runes(off, n, params, text, dest.X+1, dest.Y)
 		}
 	case AlignRight:
 		off += dest.Width - 1
-		this.draw_n_last_runes(off, n, params, text, dest.X+off, dest.Y)
+		this.draw_n_last_runes(off, n, params, text, dest.X+dest.Width-1, dest.Y)
 	}
 }
