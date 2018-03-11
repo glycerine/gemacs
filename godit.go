@@ -5,7 +5,10 @@ import (
 	"fmt"
 
 	//"github.com/nsf/termbox-go"
+	"github.com/gdamore/tcell"
 	"github.com/gdamore/tcell/termbox"
+
+	"github.com/glycerine/verb"
 
 	"github.com/nsf/tulib"
 	"os"
@@ -13,6 +16,12 @@ import (
 	"path/filepath"
 	"strconv"
 )
+
+var pp = verb.PP
+
+func init() {
+	verb.VerboseVerbose = true
+}
 
 const (
 	tabstop_length            = 8
@@ -276,6 +285,11 @@ func (g *godit) kill_all_views_but_active() {
 // Call it manually only when views layout has changed.
 func (g *godit) resize() {
 	g.uibuf = tulib.TermboxBuffer() // jea: only use of TermboxBuffer is here.
+
+	g.uibuf.Screen.SetStyle(tcell.StyleDefault.
+		Background(tcell.ColorBlack).
+		Foreground(tcell.ColorBlack))
+
 	views_area := g.uibuf.Rect
 	views_area.Height -= 1 // reserve space for command line
 	g.views.resize(views_area)
