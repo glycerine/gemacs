@@ -176,6 +176,7 @@ func (ac *autocompl) update(current cursor_location) bool {
 }
 
 func (ac *autocompl) move_cursor_down() {
+	pp("move_cursor_down")
 	if ac.cursor >= len(ac.actual_proposals())-1 {
 		return
 	}
@@ -183,6 +184,7 @@ func (ac *autocompl) move_cursor_down() {
 }
 
 func (ac *autocompl) move_cursor_up() {
+	pp("move_cursor_up")
 	if ac.cursor <= 0 {
 		return
 	}
@@ -469,6 +471,8 @@ func (s filesystem_slice) Less(i, j int) bool {
 }
 
 func filesystem_line_ac(view *view) ([]ac_proposal, int) {
+	pp("filesystem_line_ac top")
+	defer pp("filesystem_line_ac done.")
 	var dirfd *os.File
 	var err error
 	path := string(view.buf.contents()[:view.cursor.boffset])
