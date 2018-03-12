@@ -44,8 +44,8 @@ Basic things:
   C-x C-w          - Save file as (raw) [prompt] *
   C-x C-f          - Open file
   M-g              - Go to line [prompt]
-  C-/              - Undo
-  C-x C-/ (C-/...) - Redo
+  C-_              - Undo
+  C-x C-_ (C-_...) - Redo
 
 View/buffer operations:
   C-x C-v          - View operations mode *
@@ -107,7 +107,7 @@ Mark and region operations:
   M-q              - Fill region (lines between the cursor and the mark) [prompt]
 
 Advanced:
-  M-/              - Local words autocompletion
+  M-_              - Local words autocompletion
   C-x C-a          - Invoke buffer specific autocompletion menu [menu]
   C-x (            - Start keyboard macro recording
   C-x )            - Stop keyboard macro recording
