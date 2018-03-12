@@ -194,17 +194,21 @@ func (v *view) detach() {
 }
 
 func (v *view) init_autocompl() {
+	pp("view.init_autocompl()")
 	if v.ac_decide == nil {
 		return
 	}
 
 	ac_func := v.ac_decide(v)
 	if ac_func == nil {
+		pp("ac_func == nil")
 		return
 	}
 
+	pp("new_autocompl(ac_func, v)")
 	v.ac = new_autocompl(ac_func, v)
 	if v.ac != nil && len(v.ac.actual_proposals()) == 1 {
+		pp("about to v.ac.finalize(v)")
 		v.ac.finalize(v)
 		v.ac = nil
 	}
@@ -1108,6 +1112,8 @@ func (v *view) on_delete(a *action) {
 }
 
 func (v *view) on_vcommand(cmd vcommand, arg rune) {
+	pp("view.on_vcommand(cmd='%v')", cmd)
+
 	last_class := v.last_vcommand.class()
 	if cmd.class() != last_class || last_class == vcommand_class_misc {
 		v.finalize_action_group()
@@ -1173,9 +1179,12 @@ func (v *view) on_vcommand(cmd vcommand, arg rune) {
 	case vcommand_autocompl_finalize:
 		v.ac.finalize(v)
 		v.ac = nil
+	case vcommand_autocompl_tab:
+		v.ac.tab(v)
 	case vcommand_autocompl_move_cursor_up:
 		v.ac.move_cursor_up()
 	case vcommand_autocompl_move_cursor_down:
+		pp("about to v.ac.move_cursor_down()")
 		v.ac.move_cursor_down()
 	case vcommand_indent_region:
 		v.indent_region()
@@ -1208,6 +1217,7 @@ func (v *view) on_key(ev *termbox.Event) {
 		v.on_vcommand(vcommand_move_cursor_backward, 0)
 	case termbox.KeyCtrlN, termbox.KeyArrowDown:
 		if v.ac != nil {
+			pp("about to v.on_vcommand(vcommand_autocompl_move_cursor_down, 0)")
 			v.on_vcommand(vcommand_autocompl_move_cursor_down, 0)
 			break
 		}
@@ -1260,6 +1270,10 @@ func (v *view) on_key(ev *termbox.Event) {
 	case termbox.KeyPgup:
 		v.on_vcommand(vcommand_move_view_half_backward, 0)
 	case termbox.KeyTab:
+		if v.ac != nil {
+			pp("autocompl_tab")
+			v.on_vcommand(vcommand_autocompl_tab, 0)
+		}
 		v.on_vcommand(vcommand_insert_rune, '\t')
 	case termbox.KeyCtrlSpace:
 		if ev.Ch == 0 {
@@ -1927,6 +1941,7 @@ const (
 	vcommand_autocompl_move_cursor_up
 	vcommand_autocompl_move_cursor_down
 	vcommand_autocompl_finalize
+	vcommand_autocompl_tab
 	_vcommand_misc_end
 )
 

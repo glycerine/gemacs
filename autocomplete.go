@@ -191,6 +191,15 @@ func (ac *autocompl) move_cursor_up() {
 	ac.cursor--
 }
 
+func (ac *autocompl) tab(view *view) {
+	pp("autocompl tab. jea: temp, try view.init_autocompl().")
+
+	// finalize first, to capture chosen directory/file.
+	ac.finalize(view)
+	// then init again, to recurse into the chosen directory/file.
+	view.init_autocompl()
+}
+
 func (ac *autocompl) desired_height() int {
 	proposals := ac.actual_proposals()
 	minh := 0
@@ -300,16 +309,16 @@ func (ac *autocompl) draw_onto(buf *tulib.Buffer, x, y int) {
 }
 
 func (ac *autocompl) finalize(view *view) {
-	pp("autocompl.finalize()")
 	d := ac.origin.distance(ac.current)
+	pp("autocompl.finalize(), d = %v", d)
 	if d < 0 {
 		panic("something went really wrong, oops..")
 	}
 	data := clone_byte_slice(ac.actual_proposals()[ac.cursor].content[d:])
 	view.action_insert(ac.current, data)
-	ac.current.boffset += len(data)
+	ac.current.boffset += len(data) // ac.current is a cursor location.
 	view.move_cursor_to(ac.current)
-	pp("end of autocompl.finalize()")
+	pp("end of autocompl.finalize(). ac.cursor='%v', data='%v'", ac.cursor, string(data))
 }
 
 //----------------------------------------------------------------------------

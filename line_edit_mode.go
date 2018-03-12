@@ -57,7 +57,13 @@ func (l *line_edit_mode) on_key(ev *termbox.Event) {
 			l.on_apply(l.linebuf)
 		}
 	case termbox.KeyTab:
-		l.lineview.on_vcommand(vcommand_autocompl_init, 0)
+		pp("KeyTab.") //  l.lineview='%#v'", l.lineview)
+		if l.lineview.ac == nil {
+			l.lineview.on_vcommand(vcommand_autocompl_init, 0)
+		} else {
+			// jea, 1st time above, vs 2nd time below:
+			l.lineview.on_vcommand(vcommand_autocompl_tab, 0)
+		}
 	default:
 		pp("default")
 		l.lineview.on_key(ev)
