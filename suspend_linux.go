@@ -5,7 +5,7 @@ import (
 	"syscall"
 )
 
-func suspend(g *godit) {
+func suspend(g *gemacs) {
 	// finalize termbox
 	termbox.Close()
 
