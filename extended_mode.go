@@ -22,7 +22,7 @@ func init_extended_mode(gemacs *gemacs) extended_mode {
 }
 
 func (e extended_mode) on_key(ev *termbox.Event) {
-	pp("extended_mode on_key, Ch='%v', ev='%#v'", string(ev.Ch), ev)
+	//pp("extended_mode on_key, Ch='%v', ev='%#v'", string(ev.Ch), ev)
 	g := e.gemacs
 	v := g.active.leaf
 	b := v.buf

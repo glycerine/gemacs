@@ -37,12 +37,12 @@ func (l *line_edit_mode) exit() {
 }
 
 func (l *line_edit_mode) on_key(ev *termbox.Event) {
-	pp("line_edit_mode on_key, Ch='%v', ev.Key = '%#v'", string(ev.Ch), ev)
+	//pp("line_edit_mode on_key, Ch='%v', ev.Key = '%#v'", string(ev.Ch), ev)
 	switch ev.Key {
 	case termbox.KeyEnter, termbox.KeyCtrlJ:
-		pp("enter")
+		//pp("enter")
 		if l.lineview.ac != nil {
-			pp("l.lineview.ac != nil")
+			//pp("l.lineview.ac != nil")
 			l.lineview.on_key(ev)
 			if !l.init_autocompl {
 				break
@@ -53,11 +53,11 @@ func (l *line_edit_mode) on_key(ev *termbox.Event) {
 		// override it
 		l.gemacs.set_overlay_mode(nil)
 		if l.on_apply != nil {
-			pp("l.on_apply != nil")
+			//pp("l.on_apply != nil")
 			l.on_apply(l.linebuf)
 		}
 	case termbox.KeyTab:
-		pp("KeyTab.") //  l.lineview='%#v'", l.lineview)
+		//pp("KeyTab.") //  l.lineview='%#v'", l.lineview)
 		if l.lineview.ac == nil {
 			l.lineview.on_vcommand(vcommand_autocompl_init, 0)
 		} else {
@@ -65,7 +65,7 @@ func (l *line_edit_mode) on_key(ev *termbox.Event) {
 			l.lineview.on_vcommand(vcommand_autocompl_tab, 0)
 		}
 	default:
-		pp("default")
+		//pp("default")
 		l.lineview.on_key(ev)
 	}
 }

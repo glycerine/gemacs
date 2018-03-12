@@ -194,21 +194,21 @@ func (v *view) detach() {
 }
 
 func (v *view) init_autocompl() {
-	pp("view.init_autocompl()")
+	//pp("view.init_autocompl()")
 	if v.ac_decide == nil {
 		return
 	}
 
 	ac_func := v.ac_decide(v)
 	if ac_func == nil {
-		pp("ac_func == nil")
+		//pp("ac_func == nil")
 		return
 	}
 
-	pp("new_autocompl(ac_func, v)")
+	//pp("new_autocompl(ac_func, v)")
 	v.ac = new_autocompl(ac_func, v)
 	if v.ac != nil && len(v.ac.actual_proposals()) == 1 {
-		pp("about to v.ac.finalize(v)")
+		//pp("about to v.ac.finalize(v)")
 		v.ac.finalize(v)
 		v.ac = nil
 	}
@@ -1112,7 +1112,7 @@ func (v *view) on_delete(a *action) {
 }
 
 func (v *view) on_vcommand(cmd vcommand, arg rune) {
-	pp("view.on_vcommand(cmd='%v')", cmd)
+	//pp("view.on_vcommand(cmd='%v')", cmd)
 
 	last_class := v.last_vcommand.class()
 	if cmd.class() != last_class || last_class == vcommand_class_misc {
@@ -1184,7 +1184,7 @@ func (v *view) on_vcommand(cmd vcommand, arg rune) {
 	case vcommand_autocompl_move_cursor_up:
 		v.ac.move_cursor_up()
 	case vcommand_autocompl_move_cursor_down:
-		pp("about to v.ac.move_cursor_down()")
+		//pp("about to v.ac.move_cursor_down()")
 		v.ac.move_cursor_down()
 	case vcommand_indent_region:
 		v.indent_region()
@@ -1208,8 +1208,8 @@ func (v *view) on_vcommand(cmd vcommand, arg rune) {
 }
 
 func (v *view) on_key(ev *termbox.Event) {
-	pp("view on_key called, Ch='%v', ev.Key = '%#v', termbox.ModAlt=%v", string(ev.Ch), ev, termbox.ModAlt)
-	defer pp("view.on_key done.")
+	//pp("view on_key called, Ch='%v', ev.Key = '%#v', termbox.ModAlt=%v", string(ev.Ch), ev, termbox.ModAlt)
+	//defer pp("view.on_key done.")
 	switch ev.Key {
 	case termbox.KeyCtrlF, termbox.KeyArrowRight:
 		v.on_vcommand(vcommand_move_cursor_forward, 0)
@@ -1217,7 +1217,7 @@ func (v *view) on_key(ev *termbox.Event) {
 		v.on_vcommand(vcommand_move_cursor_backward, 0)
 	case termbox.KeyCtrlN, termbox.KeyArrowDown:
 		if v.ac != nil {
-			pp("about to v.on_vcommand(vcommand_autocompl_move_cursor_down, 0)")
+			//pp("about to v.on_vcommand(vcommand_autocompl_move_cursor_down, 0)")
 			v.on_vcommand(vcommand_autocompl_move_cursor_down, 0)
 			break
 		}
@@ -1241,7 +1241,7 @@ func (v *view) on_key(ev *termbox.Event) {
 	case termbox.KeySpace:
 		v.on_vcommand(vcommand_insert_rune, ' ') // space, 1st time.
 	case termbox.KeyEnter, termbox.KeyCtrlJ:
-		pp("enter")
+		//pp("enter")
 		c := '\n'
 		if ev.Key == termbox.KeyEnter {
 			// we use '\r' for <enter>, because it doesn't cause
@@ -1249,12 +1249,12 @@ func (v *view) on_key(ev *termbox.Event) {
 			c = '\r'
 		}
 		if v.ac != nil {
-			pp("autocompl_finalize")
+			//pp("autocompl_finalize")
 			v.on_vcommand(vcommand_autocompl_finalize, 0)
 			// jea: pass along the enter...for faster autocomplete.
 			v.g.overlay.on_key(ev)
 		} else {
-			pp("insert rune c='%v' ('%v')", string(c), c)
+			//pp("insert rune c='%v' ('%v')", string(c), c)
 			v.on_vcommand(vcommand_insert_rune, c)
 		}
 	case termbox.KeyBackspace, termbox.KeyBackspace2:
@@ -1271,7 +1271,7 @@ func (v *view) on_key(ev *termbox.Event) {
 		v.on_vcommand(vcommand_move_view_half_backward, 0)
 	case termbox.KeyTab:
 		if v.ac != nil {
-			pp("autocompl_tab")
+			//pp("autocompl_tab")
 			v.on_vcommand(vcommand_autocompl_tab, 0)
 		}
 		v.on_vcommand(vcommand_insert_rune, '\t')
@@ -1299,7 +1299,7 @@ func (v *view) on_key(ev *termbox.Event) {
 	}
 
 	if ev.Mod&termbox.ModAlt != 0 || v.pressesSinceEsc == 1 {
-		pp("view, in Esc handling, Ch='%v'. v.pressesSinceEsc=%v", string(ev.Ch), v.pressesSinceEsc)
+		//pp("view, in Esc handling, Ch='%v'. v.pressesSinceEsc=%v", string(ev.Ch), v.pressesSinceEsc)
 		switch ev.Ch {
 		case 'v':
 			v.on_vcommand(vcommand_move_view_half_backward, 0)
@@ -1323,7 +1323,7 @@ func (v *view) on_key(ev *termbox.Event) {
 			v.on_vcommand(vcommand_word_to_title, 0)
 		}
 	} else if ev.Ch != 0 {
-		pp("view, final on_vcommand for ev.Ch='%v'", string(ev.Ch))
+		//pp("view, final on_vcommand for ev.Ch='%v'", string(ev.Ch))
 		// jea: in gemacs, space had ev.Ch == 0, so didn't get here.
 		// However in tcell/compat mode, ev.Ch == 32.
 		// Not sure what else is relying on this, so for now
