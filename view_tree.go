@@ -21,10 +21,10 @@ type view_tree struct {
 	leaf       *view
 	split      float32
 	tulib.Rect // updated with 'resize' call
-	g          *godit
+	g          *gemacs
 }
 
-func new_view_tree_leaf(parent *view_tree, v *view, g *godit) *view_tree {
+func new_view_tree_leaf(parent *view_tree, v *view, g *gemacs) *view_tree {
 	return &view_tree{
 		parent: parent,
 		leaf:   v,

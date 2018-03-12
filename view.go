@@ -148,10 +148,10 @@ type view struct {
 	highlight_ranges []byte_range
 	tags             []view_tag
 	pressesSinceEsc  int64
-	g                *godit
+	g                *gemacs
 }
 
-func new_view(ctx view_context, buf *buffer, g *godit) *view {
+func new_view(ctx view_context, buf *buffer, g *gemacs) *view {
 	v := new(view)
 	v.g = g
 	v.ctx = ctx
@@ -160,6 +160,7 @@ func new_view(ctx view_context, buf *buffer, g *godit) *view {
 	v.ac_decide = default_ac_decide
 	v.highlight_ranges = make([]byte_range, 0, 10)
 	v.tags = make([]view_tag, 0, 10)
+	v.pressesSinceEsc = 4
 	return v
 }
 
@@ -1198,23 +1199,8 @@ func (v *view) on_vcommand(cmd vcommand, arg rune) {
 }
 
 func (v *view) on_key(ev *termbox.Event) {
-	//pp("view on_key called, ev.Key = '%#v', termbox.ModAlt=%v", ev, termbox.ModAlt)
-	//pp("ev.Mod = '%v', termbox.ModAlt = %v, anded=%v. ev.Ch=%v. ev='%#v'", ev.Mod, termbox.ModAlt, ev.Mod&termbox.ModAlt, ev.Ch, ev) // ev.Ch = 0, 2x.
-
-	/* space produces, in gemacs:
-		   view.go:1204 2018-03-11 00:00:13.657 -0600 CST view on_key called, ev.Key = '32'. ev.Ch=32, ev.Mod=0
-		   view.go:1205 2018-03-11 00:00:13.657 -0600 CST ev.Mod = '0', termbox.ModAlt = 4, anded=0. ev.Ch=32. ev='&termbox.Event{Type:0x1, Mod:0, Key:32, Ch:32, Width:0, Height:0, Err:error(nil), MouseX:0, MouseY:0, N:0}'
-
-	versus/compared to, a space in godit:
-
-	   view.go:1169 2018-03-10 23:59:00.877 -0600 CST view on_key called, ev.Key = '32'. ev.Ch=0, ev.Mod=0
-
-	   view.go:1170 2018-03-10 23:59:00.878 -0600 CST ev.Mod = '0', termbox.ModAlt = 1, anded=0. ev.Ch=0. ev='&termbox.Event{Type:0x0, Mod:0x0, Key:0x20, Ch:0, Width:0, Height:0, Err:error(nil), MouseX:0, MouseY:0, N:1}'
-
-	   view.go:1237 2018-03-10 23:59:00.878 -0600 CST ev.Mod = '0', termbox.ModAlt = 1, anded=0. ev.Ch=0
-
-	*/
-
+	pp("view on_key called, Ch='%v', ev.Key = '%#v', termbox.ModAlt=%v", string(ev.Ch), ev, termbox.ModAlt)
+	defer pp("view.on_key done.")
 	switch ev.Key {
 	case termbox.KeyCtrlF, termbox.KeyArrowRight:
 		v.on_vcommand(vcommand_move_cursor_forward, 0)
@@ -1245,6 +1231,7 @@ func (v *view) on_key(ev *termbox.Event) {
 	case termbox.KeySpace:
 		v.on_vcommand(vcommand_insert_rune, ' ') // space, 1st time.
 	case termbox.KeyEnter, termbox.KeyCtrlJ:
+		pp("enter")
 		c := '\n'
 		if ev.Key == termbox.KeyEnter {
 			// we use '\r' for <enter>, because it doesn't cause
@@ -1252,8 +1239,10 @@ func (v *view) on_key(ev *termbox.Event) {
 			c = '\r'
 		}
 		if v.ac != nil {
+			pp("autocompl_finalize")
 			v.on_vcommand(vcommand_autocompl_finalize, 0)
 		} else {
+			pp("insert rune c='%v' ('%v')", string(c), c)
 			v.on_vcommand(vcommand_insert_rune, c)
 		}
 	case termbox.KeyBackspace, termbox.KeyBackspace2:
@@ -1283,7 +1272,7 @@ func (v *view) on_key(ev *termbox.Event) {
 	if ev.Key == termbox.KeyEsc {
 		//pp("terbox.KeyEsc recognized!")
 		v.pressesSinceEsc = 0
-		v.g.set_status("ESC")
+		v.g.set_status("ESC-")
 
 	} else {
 		v.pressesSinceEsc++
@@ -1293,12 +1282,8 @@ func (v *view) on_key(ev *termbox.Event) {
 		}
 	}
 
-	//pp("ev.Mod = '%v', termbox.ModAlt = %v, anded=%v. ev.Ch=%v", ev.Mod, termbox.ModAlt, ev.Mod&termbox.ModAlt, ev.Ch)
-	// gemacs: space key =>
-	// view.go:1273 2018-03-10 23:48:09.673 -0600 CST ev.Mod = '0', termbox.ModAlt = 4, anded=0. ev.Ch=32
-	// godit:  space key =>
-	// view.go:1234 2018-03-10 23:47:13.039 -0600 CST ev.Mod = '0', termbox.ModAlt = 1, anded=0. ev.Ch=0
 	if ev.Mod&termbox.ModAlt != 0 || v.pressesSinceEsc == 1 {
+		pp("view, in Esc handling, Ch='%v'. v.pressesSinceEsc=%v", string(ev.Ch), v.pressesSinceEsc)
 		switch ev.Ch {
 		case 'v':
 			v.on_vcommand(vcommand_move_view_half_backward, 0)
@@ -1322,7 +1307,8 @@ func (v *view) on_key(ev *termbox.Event) {
 			v.on_vcommand(vcommand_word_to_title, 0)
 		}
 	} else if ev.Ch != 0 {
-		// jea: in godit, space had ev.Ch == 0, so didn't get here.
+		pp("view, final on_vcommand for ev.Ch='%v'", string(ev.Ch))
+		// jea: in gemacs, space had ev.Ch == 0, so didn't get here.
 		// However in tcell/compat mode, ev.Ch == 32.
 		// Not sure what else is relying on this, so for now
 		// just don't double up on spaces.
@@ -1819,7 +1805,7 @@ func (v *view) search_and_replace(word, repl []byte) {
 
 			// It is safe to use the original 'repl' here, but be
 			// very careful with that, it may change. 'repl' comes
-			// from 'godit.s_and_r_last_repl', if someone decides
+			// from 'gemacs.s_and_r_last_repl', if someone decides
 			// to make it mutable, then 'repl' must be copied
 			// somewhere in this func.
 			v.action_insert(cur, repl)

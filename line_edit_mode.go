@@ -14,7 +14,7 @@ import (
 type line_edit_mode struct {
 	stub_overlay_mode
 	line_edit_mode_params
-	godit    *godit
+	gemacs   *gemacs
 	linebuf  *buffer
 	lineview *view
 	prompt   []byte
@@ -37,9 +37,12 @@ func (l *line_edit_mode) exit() {
 }
 
 func (l *line_edit_mode) on_key(ev *termbox.Event) {
+	pp("line_edit_mode on_key, Ch='%v', ev.Key = '%#v'", string(ev.Ch), ev)
 	switch ev.Key {
 	case termbox.KeyEnter, termbox.KeyCtrlJ:
+		pp("enter")
 		if l.lineview.ac != nil {
+			pp("l.lineview.ac != nil")
 			l.lineview.on_key(ev)
 			if !l.init_autocompl {
 				break
@@ -48,13 +51,15 @@ func (l *line_edit_mode) on_key(ev *termbox.Event) {
 
 		// reset overlay mode earlier so that 'on_apply' can
 		// override it
-		l.godit.set_overlay_mode(nil)
+		l.gemacs.set_overlay_mode(nil)
 		if l.on_apply != nil {
+			pp("l.on_apply != nil")
 			l.on_apply(l.linebuf)
 		}
 	case termbox.KeyTab:
 		l.lineview.on_vcommand(vcommand_autocompl_init, 0)
 	default:
+		pp("default")
 		l.lineview.on_key(ev)
 	}
 }
@@ -68,7 +73,7 @@ func (l *line_edit_mode) resize(ev *termbox.Event) {
 }
 
 func (l *line_edit_mode) draw() {
-	ui := l.godit.uibuf
+	ui := l.gemacs.uibuf
 	view := l.lineview
 
 	// update label
@@ -110,24 +115,24 @@ func (l *line_edit_mode) needs_cursor() bool {
 }
 
 func (l *line_edit_mode) cursor_position() (int, int) {
-	y := l.godit.uibuf.Height - 1
+	y := l.gemacs.uibuf.Height - 1
 	x := l.prompt_w + 1
 	lx, ly := l.lineview.cursor_position()
 	return x + lx, y + ly
 }
 
-func init_line_edit_mode(godit *godit, p line_edit_mode_params) *line_edit_mode {
+func init_line_edit_mode(gemacs *gemacs, p line_edit_mode_params) *line_edit_mode {
 	l := new(line_edit_mode)
-	l.godit = godit
+	l.gemacs = gemacs
 	l.line_edit_mode_params = p
 
 	l.linebuf, _ = new_buffer(strings.NewReader(p.initial_content))
-	l.lineview = new_view(godit.view_context(), l.linebuf, godit)
+	l.lineview = new_view(gemacs.view_context(), l.linebuf, gemacs)
 	l.lineview.oneline = true          // enable one line mode
 	l.lineview.ac_decide = p.ac_decide // override ac_decide function
 	l.prompt = []byte(p.prompt)
 	l.prompt_w = utf8.RuneCount(l.prompt)
-	l.lineview.resize(l.godit.uibuf.Width-l.prompt_w-1, 1)
+	l.lineview.resize(l.gemacs.uibuf.Width-l.prompt_w-1, 1)
 	l.lineview.on_vcommand(vcommand_move_cursor_end_of_line, 0)
 	if l.init_autocompl {
 		l.lineview.on_vcommand(vcommand_autocompl_init, 0)

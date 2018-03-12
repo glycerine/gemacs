@@ -298,6 +298,7 @@ func (ac *autocompl) draw_onto(buf *tulib.Buffer, x, y int) {
 }
 
 func (ac *autocompl) finalize(view *view) {
+	pp("autocompl.finalize()")
 	d := ac.origin.distance(ac.current)
 	if d < 0 {
 		panic("something went really wrong, oops..")
@@ -306,6 +307,7 @@ func (ac *autocompl) finalize(view *view) {
 	view.action_insert(ac.current, data)
 	ac.current.boffset += len(data)
 	view.move_cursor_to(ac.current)
+	pp("end of autocompl.finalize()")
 }
 
 //----------------------------------------------------------------------------
@@ -411,17 +413,17 @@ func gocode_ac(view *view) ([]ac_proposal, int) {
 // buffer autocompletion
 //----------------------------------------------------------------------------
 
-func make_godit_buffer_ac_decide(godit *godit) ac_decide_func {
+func make_gemacs_buffer_ac_decide(gemacs *gemacs) ac_decide_func {
 	return func(view *view) ac_func {
-		return make_godit_buffer_ac(godit)
+		return make_gemacs_buffer_ac(gemacs)
 	}
 }
 
-func make_godit_buffer_ac(godit *godit) ac_func {
+func make_gemacs_buffer_ac(gemacs *gemacs) ac_func {
 	return func(view *view) ([]ac_proposal, int) {
 		prefix := string(view.buf.contents()[:view.cursor.boffset])
 		proposals := make([]ac_proposal, 0, 20)
-		for _, buf := range godit.buffers {
+		for _, buf := range gemacs.buffers {
 			if strings.HasPrefix(buf.name, prefix) {
 				display := make([]byte, len(buf.name), len(buf.name)+5)
 				content := display
