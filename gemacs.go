@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"unicode"
 
 	"github.com/gdamore/tcell/termbox"
 	"github.com/glycerine/verb"
@@ -630,6 +631,13 @@ func (g *godit) goto_line_lemp() line_edit_mode_params {
 		prompt: "Goto line:",
 		on_apply: func(buf *buffer) {
 			numstr := string(buf.contents())
+			// remove leading non-digit
+			for len(numstr) > 0 {
+				if unicode.IsDigit(rune(numstr[0])) {
+					break
+				}
+				numstr = numstr[1:]
+			}
 			num, err := strconv.Atoi(numstr)
 			if err != nil {
 				g.set_status(err.Error())
