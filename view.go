@@ -1241,6 +1241,8 @@ func (v *view) on_key(ev *termbox.Event) {
 		if v.ac != nil {
 			pp("autocompl_finalize")
 			v.on_vcommand(vcommand_autocompl_finalize, 0)
+			// jea: pass along the enter...for faster autocomplete.
+			v.g.overlay.on_key(ev)
 		} else {
 			pp("insert rune c='%v' ('%v')", string(c), c)
 			v.on_vcommand(vcommand_insert_rune, c)

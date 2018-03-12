@@ -17,16 +17,16 @@ import (
 var pp = verb.PP
 
 func init() {
+	/*
+		// debugging tools.
+		f, err := os.Create("./log.gemacs.debug")
+		if err != nil {
+			panic(err)
+		}
+		verb.OurStdout = f
 
-	// debugging tools.
-	f, err := os.Create("./log.gemacs.debug")
-	if err != nil {
-		panic(err)
-	}
-	verb.OurStdout = f
-
-	verb.VerboseVerbose = true
-
+		verb.VerboseVerbose = true
+	*/
 }
 
 const (
@@ -466,12 +466,14 @@ func (g *gemacs) consume_more_events() bool {
 func (g *gemacs) handle_event(ev *termbox.Event) bool {
 	switch ev.Type {
 	case termbox.EventKey:
+		pp("gemacs.handle_event, ev='%#v'", ev)
 		if g.recording {
 			g.keymacros = append(g.keymacros, create_key_event(ev))
 		}
 		g.set_status("") // reset status on every key event
 		g.on_sys_key(ev)
 		if g.overlay != nil {
+			pp("g.overlay != nil")
 			g.overlay.on_key(ev)
 		} else {
 			g.on_key(ev)
