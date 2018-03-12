@@ -17,7 +17,8 @@ Screenshots:
  * http://nosmileface.ru/images/godit-linux2.png
 
 
-Gemacs is an emacs-ish lightweight text editor.
+Gemacs is an emacs-ish lightweight text editor. Terminal based,
+it works anywhere.
 
 Gemacs uses many of the emacs key
 bindings and operates using a notion of "micromodes". It's easier to explain
