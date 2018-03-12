@@ -148,10 +148,12 @@ type view struct {
 	highlight_ranges []byte_range
 	tags             []view_tag
 	pressesSinceEsc  int64
+	g                *godit
 }
 
-func new_view(ctx view_context, buf *buffer) *view {
+func new_view(ctx view_context, buf *buffer, g *godit) *view {
 	v := new(view)
+	v.g = g
 	v.ctx = ctx
 	v.uibuf = tulib.NewBuffer(1, 1) // the only place NewBuffer is called.
 	v.attach(buf)
@@ -1281,6 +1283,8 @@ func (v *view) on_key(ev *termbox.Event) {
 	if ev.Key == termbox.KeyEsc {
 		//pp("terbox.KeyEsc recognized!")
 		v.pressesSinceEsc = 0
+		v.g.set_status("ESC")
+
 	} else {
 		v.pressesSinceEsc++
 		if v.pressesSinceEsc < 0 {

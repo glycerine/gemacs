@@ -36,13 +36,14 @@ Basic things:
   C-x S            - Save file (raw) [prompt maybe]
   C-x M-s          - Save file as [prompt]
   C-x M-S          - Save file as (raw) [prompt]
+  C-x C-w          - Save file as (raw) [prompt]
   C-x C-f          - Open file
   M-g              - Go to line [prompt]
   C-/              - Undo
   C-x C-/ (C-/...) - Redo
 
 View/buffer operations:
-  C-x C-w          - View operations mode
+  C-x C-v          - View operations mode
   C-x 0            - Kill active view
   C-x 1            - Kill all views but active
   C-x 2            - Split active view vertically

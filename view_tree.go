@@ -21,33 +21,35 @@ type view_tree struct {
 	leaf       *view
 	split      float32
 	tulib.Rect // updated with 'resize' call
+	g          *godit
 }
 
-func new_view_tree_leaf(parent *view_tree, v *view) *view_tree {
+func new_view_tree_leaf(parent *view_tree, v *view, g *godit) *view_tree {
 	return &view_tree{
 		parent: parent,
 		leaf:   v,
+		g:      g,
 	}
 }
 
 func (v *view_tree) split_vertically() {
 	top := v.leaf
-	bottom := new_view(top.ctx, top.buf)
+	bottom := new_view(top.ctx, top.buf, v.g)
 	*v = view_tree{
 		parent: v.parent,
-		top:    new_view_tree_leaf(v, top),
-		bottom: new_view_tree_leaf(v, bottom),
+		top:    new_view_tree_leaf(v, top, v.g),
+		bottom: new_view_tree_leaf(v, bottom, v.g),
 		split:  0.5,
 	}
 }
 
 func (v *view_tree) split_horizontally() {
 	left := v.leaf
-	right := new_view(left.ctx, left.buf)
+	right := new_view(left.ctx, left.buf, v.g)
 	*v = view_tree{
 		parent: v.parent,
-		left:   new_view_tree_leaf(v, left),
-		right:  new_view_tree_leaf(v, right),
+		left:   new_view_tree_leaf(v, left, v.g),
+		right:  new_view_tree_leaf(v, right, v.g),
 		split:  0.5,
 	}
 }

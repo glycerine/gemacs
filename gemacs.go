@@ -94,7 +94,7 @@ func new_godit(filenames []string) *godit {
 		buf.name = g.buffer_name("unnamed")
 		g.buffers = append(g.buffers, buf)
 	}
-	g.views = new_view_tree_leaf(nil, new_view(g.view_context(), g.buffers[0]))
+	g.views = new_view_tree_leaf(nil, new_view(g.view_context(), g.buffers[0], g), g)
 	g.active = g.views
 	g.keymacros = make([]key_event, 0, 50)
 	g.isearch_last_word = make([]byte, 0, 32)
