@@ -2,9 +2,9 @@ gemacs: an emacs written in Go
 ==============================
 
 `gemacs` is derived from `godit`, https://github.com/nsf/godit,
-and adapted to use https://github.com/gdamore/tcell instead of `termbox-go`.
+and adapted to use https://github.com/gdamore/tcell for portability.
 
-Release v1.0.1 improves file auto-completion with tab and enter.
+Release v1.0.2 improves file auto-completion with tab and enter.
 Ctrl-x Ctr-w does write file, as in traditional emacs.
 View operations is rebound to Ctrl-x Ctrl-v.
 
