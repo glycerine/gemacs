@@ -17,15 +17,15 @@ import (
 var pp = verb.PP
 
 func init() {
-	// debugging tools.
-	f, err := os.Create("./log.gemacs.debug")
-	if err != nil {
-		panic(err)
-	}
-	verb.OurStdout = f
-
-	verb.VerboseVerbose = true
-
+	/*
+		// debugging tools.
+		f, err := os.Create("./log.gemacs.debug")
+		if err != nil {
+			panic(err)
+		}
+		verb.OurStdout = f
+		verb.VerboseVerbose = true
+	*/
 }
 
 const (
