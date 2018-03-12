@@ -122,7 +122,7 @@ func init_line_edit_mode(godit *godit, p line_edit_mode_params) *line_edit_mode 
 	l.line_edit_mode_params = p
 
 	l.linebuf, _ = new_buffer(strings.NewReader(p.initial_content))
-	l.lineview = new_view(godit.view_context(), l.linebuf)
+	l.lineview = new_view(godit.view_context(), l.linebuf, godit)
 	l.lineview.oneline = true          // enable one line mode
 	l.lineview.ac_decide = p.ac_decide // override ac_decide function
 	l.prompt = []byte(p.prompt)
