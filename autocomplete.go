@@ -176,7 +176,6 @@ func (ac *autocompl) update(current cursor_location) bool {
 }
 
 func (ac *autocompl) move_cursor_down() {
-	pp("move_cursor_down")
 	if ac.cursor >= len(ac.actual_proposals())-1 {
 		return
 	}
@@ -184,7 +183,6 @@ func (ac *autocompl) move_cursor_down() {
 }
 
 func (ac *autocompl) move_cursor_up() {
-	pp("move_cursor_up")
 	if ac.cursor <= 0 {
 		return
 	}
@@ -192,8 +190,6 @@ func (ac *autocompl) move_cursor_up() {
 }
 
 func (ac *autocompl) tab(view *view) {
-	pp("autocompl tab. jea: temp, try view.init_autocompl().")
-
 	// finalize first, to capture chosen directory/file.
 	ac.finalize(view)
 	// then init again, to recurse into the chosen directory/file.
@@ -310,7 +306,6 @@ func (ac *autocompl) draw_onto(buf *tulib.Buffer, x, y int) {
 
 func (ac *autocompl) finalize(view *view) {
 	d := ac.origin.distance(ac.current)
-	pp("autocompl.finalize(), d = %v", d)
 	if d < 0 {
 		panic("something went really wrong, oops..")
 	}
@@ -318,7 +313,6 @@ func (ac *autocompl) finalize(view *view) {
 	view.action_insert(ac.current, data)
 	ac.current.boffset += len(data) // ac.current is a cursor location.
 	view.move_cursor_to(ac.current)
-	pp("end of autocompl.finalize(). ac.cursor='%v', data='%v'", ac.cursor, string(data))
 }
 
 //----------------------------------------------------------------------------
@@ -480,8 +474,6 @@ func (s filesystem_slice) Less(i, j int) bool {
 }
 
 func filesystem_line_ac(view *view) ([]ac_proposal, int) {
-	pp("filesystem_line_ac top")
-	defer pp("filesystem_line_ac done.")
 	var dirfd *os.File
 	var err error
 	path := string(view.buf.contents()[:view.cursor.boffset])

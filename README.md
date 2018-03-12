@@ -4,7 +4,12 @@ gemacs: an emacs written in Go
 `gemacs` is derived from `godit`, https://github.com/nsf/godit,
 and adapted to use https://github.com/gdamore/tcell instead of `termbox-go`.
 
-Quoting from the original readme, with the program name updated:
+Release v1.0.1 improves file auto-completion with tab and enter.
+Ctrl-x Ctr-w does write file, as in traditional emacs.
+View operations is rebound to Ctrl-x Ctrl-v.
+
+Quoting from the original godit readme, with the program name updated
+to avoid confusion.
 
 Screenshots:
 
@@ -25,7 +30,7 @@ repeat that action. But as soon as some other key was pressed you quit this
 micromode and everything is back to normal again. The idea of micromode is used
 in gemacs a lot.
 
-# List of keybindings
+# List of keybindings (updated for gemacs, * means new)
 
 ~~~
 
@@ -36,14 +41,14 @@ Basic things:
   C-x S            - Save file (raw) [prompt maybe]
   C-x M-s          - Save file as [prompt]
   C-x M-S          - Save file as (raw) [prompt]
-  C-x C-w          - Save file as (raw) [prompt]
+  C-x C-w          - Save file as (raw) [prompt] *
   C-x C-f          - Open file
   M-g              - Go to line [prompt]
   C-/              - Undo
   C-x C-/ (C-/...) - Redo
 
 View/buffer operations:
-  C-x C-v          - View operations mode
+  C-x C-v          - View operations mode *
   C-x 0            - Kill active view
   C-x 1            - Kill all views but active
   C-x 2            - Split active view vertically

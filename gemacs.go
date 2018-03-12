@@ -17,8 +17,8 @@ import (
 var pp = verb.PP
 
 func init() {
+	// debugging tools.
 	/*
-		// debugging tools.
 		f, err := os.Create("./log.gemacs.debug")
 		if err != nil {
 			panic(err)
@@ -393,7 +393,7 @@ func (g *gemacs) on_sys_key(ev *termbox.Event) {
 }
 
 func (g *gemacs) on_alt_key(ev *termbox.Event) bool {
-	pp("on_alt_key() called, ev = '%#v'", ev)
+	//pp("on_alt_key() called, ev = '%#v'", ev)
 	switch ev.Ch {
 	case 'g':
 		g.set_overlay_mode(init_line_edit_mode(g, g.goto_line_lemp()))
@@ -409,7 +409,7 @@ func (g *gemacs) on_alt_key(ev *termbox.Event) bool {
 }
 
 func (g *gemacs) on_key(ev *termbox.Event) {
-	pp("top level gemacs.on_key: Ch='%v', ev='%#v'", string(ev.Ch), ev)
+	//pp("top level gemacs.on_key: Ch='%v', ev='%#v'", string(ev.Ch), ev)
 	v := g.active.leaf
 	switch ev.Key {
 	case termbox.KeyCtrlX:
@@ -465,14 +465,14 @@ func (g *gemacs) consume_more_events() bool {
 func (g *gemacs) handle_event(ev *termbox.Event) bool {
 	switch ev.Type {
 	case termbox.EventKey:
-		pp("gemacs.handle_event, ev='%#v'", ev)
+		//pp("gemacs.handle_event, ev='%#v'", ev)
 		if g.recording {
 			g.keymacros = append(g.keymacros, create_key_event(ev))
 		}
 		g.set_status("") // reset status on every key event
 		g.on_sys_key(ev)
 		if g.overlay != nil {
-			pp("g.overlay != nil")
+			//pp("g.overlay != nil")
 			g.overlay.on_key(ev)
 		} else {
 			g.on_key(ev)
