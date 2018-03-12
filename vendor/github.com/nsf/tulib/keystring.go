@@ -3,7 +3,6 @@ package tulib
 import (
 	"bytes"
 	"github.com/gdamore/tcell/termbox"
-	//"github.com/nsf/termbox-go"
 )
 
 func KeyToString(key termbox.Key, ch rune, mod termbox.Modifier) string {
