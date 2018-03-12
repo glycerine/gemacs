@@ -17,15 +17,16 @@ import (
 var pp = verb.PP
 
 func init() {
-	/*
-		// debugging tools.
-		f, err := os.Create("./log.gemacs.debug")
-		if err != nil {
-			panic(err)
-		}
-		verb.OurStdout = f
-		verb.VerboseVerbose = true
-	*/
+
+	// debugging tools.
+	f, err := os.Create("./log.gemacs.debug")
+	if err != nil {
+		panic(err)
+	}
+	verb.OurStdout = f
+
+	verb.VerboseVerbose = true
+
 }
 
 const (
@@ -60,13 +61,13 @@ func (k key_event) to_termbox_event() termbox.Event {
 }
 
 //----------------------------------------------------------------------------
-// godit
+// gemacs
 //
 // Main top-level structure, that handles views composition, status bar and
 // input messaging. Also it's the spot where keyboard macros are implemented.
 //----------------------------------------------------------------------------
 
-type godit struct {
+type gemacs struct {
 	uibuf             *tulib.Buffer
 	active            *view_tree // this one is always a leaf node
 	views             *view_tree // a root node
@@ -84,8 +85,8 @@ type godit struct {
 	s_and_r_last_repl []byte
 }
 
-func new_godit(filenames []string) *godit {
-	g := new(godit)
+func new_gemacs(filenames []string) *gemacs {
+	g := new(gemacs)
 	g.buffers = make([]*buffer, 0, 20)
 	for _, filename := range filenames {
 		g.new_buffer_from_file(filename)
@@ -102,7 +103,7 @@ func new_godit(filenames []string) *godit {
 	return g
 }
 
-func (g *godit) kill_buffer(buf *buffer) {
+func (g *gemacs) kill_buffer(buf *buffer) {
 	var replacement *buffer
 	views := make([]*view, len(buf.views))
 	copy(views, buf.views)
@@ -146,7 +147,7 @@ func (g *godit) kill_buffer(buf *buffer) {
 	g.buffers = g.buffers[:len(g.buffers)-1]
 }
 
-func (g *godit) find_buffer_by_full_path(path string) *buffer {
+func (g *gemacs) find_buffer_by_full_path(path string) *buffer {
 	for _, buf := range g.buffers {
 		if buf.path == path {
 			return buf
@@ -155,7 +156,7 @@ func (g *godit) find_buffer_by_full_path(path string) *buffer {
 	return nil
 }
 
-func (g *godit) open_buffers_from_pattern(pattern string) {
+func (g *gemacs) open_buffers_from_pattern(pattern string) {
 	matches, err := filepath.Glob(pattern)
 	if err != nil {
 		panic(err)
@@ -175,7 +176,7 @@ func (g *godit) open_buffers_from_pattern(pattern string) {
 	g.active.leaf.attach(buf)
 }
 
-func (g *godit) buffer_name_exists(name string) bool {
+func (g *gemacs) buffer_name_exists(name string) bool {
 	for _, buf := range g.buffers {
 		if buf.name == name {
 			return true
@@ -184,7 +185,7 @@ func (g *godit) buffer_name_exists(name string) bool {
 	return false
 }
 
-func (g *godit) buffer_name(name string) string {
+func (g *gemacs) buffer_name(name string) string {
 	if !g.buffer_name_exists(name) {
 		return name
 	}
@@ -198,7 +199,7 @@ func (g *godit) buffer_name(name string) string {
 	panic("too many buffers opened with the same name")
 }
 
-func (g *godit) new_buffer_from_file(filename string) (*buffer, error) {
+func (g *gemacs) new_buffer_from_file(filename string) (*buffer, error) {
 	fullpath := abs_path(filename)
 	buf := g.find_buffer_by_full_path(fullpath)
 	if buf != nil {
@@ -230,12 +231,12 @@ func (g *godit) new_buffer_from_file(filename string) (*buffer, error) {
 	return buf, nil
 }
 
-func (g *godit) set_status(format string, args ...interface{}) {
+func (g *gemacs) set_status(format string, args ...interface{}) {
 	g.statusbuf.Reset()
 	fmt.Fprintf(&g.statusbuf, format, args...)
 }
 
-func (g *godit) split_horizontally() {
+func (g *gemacs) split_horizontally() {
 	if g.active.Width == 0 {
 		return
 	}
@@ -244,7 +245,7 @@ func (g *godit) split_horizontally() {
 	g.resize()
 }
 
-func (g *godit) split_vertically() {
+func (g *gemacs) split_vertically() {
 	if g.active.Height == 0 {
 		return
 	}
@@ -253,7 +254,7 @@ func (g *godit) split_vertically() {
 	g.resize()
 }
 
-func (g *godit) kill_active_view() {
+func (g *gemacs) kill_active_view() {
 	p := g.active.parent
 	if p == nil {
 		return
@@ -273,7 +274,7 @@ func (g *godit) kill_active_view() {
 	g.resize()
 }
 
-func (g *godit) kill_all_views_but_active() {
+func (g *gemacs) kill_all_views_but_active() {
 	g.views.traverse(func(v *view_tree) {
 		if v == g.active {
 			return
@@ -288,14 +289,14 @@ func (g *godit) kill_all_views_but_active() {
 }
 
 // Call it manually only when views layout has changed.
-func (g *godit) resize() {
+func (g *gemacs) resize() {
 	g.uibuf = tulib.TermboxBuffer() // jea: only use of TermboxBuffer is here.
 	views_area := g.uibuf.Rect
 	views_area.Height -= 1 // reserve space for command line
 	g.views.resize(views_area)
 }
 
-func (g *godit) draw_autocompl() {
+func (g *gemacs) draw_autocompl() {
 
 	view := g.active.leaf
 	x, y := g.active.X, g.active.Y
@@ -310,7 +311,7 @@ func (g *godit) draw_autocompl() {
 	}
 }
 
-func (g *godit) draw() {
+func (g *gemacs) draw() {
 	var overlay_needs_cursor bool
 	if g.overlay != nil {
 		overlay_needs_cursor = g.overlay.needs_cursor()
@@ -342,7 +343,7 @@ func (g *godit) draw() {
 	termbox.SetCursor(cx, cy)
 }
 
-func (g *godit) draw_status() {
+func (g *gemacs) draw_status() {
 	lp := default_label_params
 	r := g.uibuf.Rect
 	r.Y = r.Height - 1
@@ -351,7 +352,7 @@ func (g *godit) draw_status() {
 	g.uibuf.DrawLabel(r, &lp, g.statusbuf.Bytes())
 }
 
-func (g *godit) composite_recursively(v *view_tree) {
+func (g *gemacs) composite_recursively(v *view_tree) {
 	if v.leaf != nil {
 		g.uibuf.Blit(v.Rect, 0, 0, v.leaf.uibuf)
 		return
@@ -375,12 +376,12 @@ func (g *godit) composite_recursively(v *view_tree) {
 	}
 }
 
-func (g *godit) cursor_position() (int, int) {
+func (g *gemacs) cursor_position() (int, int) {
 	x, y := g.active.leaf.cursor_position()
 	return g.active.X + x, g.active.Y + y
 }
 
-func (g *godit) on_sys_key(ev *termbox.Event) {
+func (g *gemacs) on_sys_key(ev *termbox.Event) {
 	switch ev.Key {
 	case termbox.KeyCtrlG:
 		v := g.active.leaf
@@ -392,8 +393,8 @@ func (g *godit) on_sys_key(ev *termbox.Event) {
 	}
 }
 
-func (g *godit) on_alt_key(ev *termbox.Event) bool {
-	//pp("on_alt_key() called, ev = '%#v'", ev)
+func (g *gemacs) on_alt_key(ev *termbox.Event) bool {
+	pp("on_alt_key() called, ev = '%#v'", ev)
 	switch ev.Ch {
 	case 'g':
 		g.set_overlay_mode(init_line_edit_mode(g, g.goto_line_lemp()))
@@ -408,7 +409,8 @@ func (g *godit) on_alt_key(ev *termbox.Event) bool {
 	return false
 }
 
-func (g *godit) on_key(ev *termbox.Event) {
+func (g *gemacs) on_key(ev *termbox.Event) {
+	pp("top level gemacs.on_key: Ch='%v', ev='%#v'", string(ev.Ch), ev)
 	v := g.active.leaf
 	switch ev.Key {
 	case termbox.KeyCtrlX:
@@ -425,7 +427,7 @@ func (g *godit) on_key(ev *termbox.Event) {
 	}
 }
 
-func (g *godit) main_loop() {
+func (g *gemacs) main_loop() {
 	g.termbox_event = make(chan termbox.Event, 20)
 	go func() {
 		for {
@@ -446,7 +448,7 @@ func (g *godit) main_loop() {
 	}
 }
 
-func (g *godit) consume_more_events() bool {
+func (g *gemacs) consume_more_events() bool {
 	for {
 		select {
 		case ev := <-g.termbox_event:
@@ -461,7 +463,7 @@ func (g *godit) consume_more_events() bool {
 	panic("unreachable")
 }
 
-func (g *godit) handle_event(ev *termbox.Event) bool {
+func (g *gemacs) handle_event(ev *termbox.Event) bool {
 	switch ev.Type {
 	case termbox.EventKey:
 		if g.recording {
@@ -495,7 +497,7 @@ func (g *godit) handle_event(ev *termbox.Event) bool {
 	return true
 }
 
-func (g *godit) set_overlay_mode(m overlay_mode) {
+func (g *gemacs) set_overlay_mode(m overlay_mode) {
 
 	if g.overlay != nil {
 		g.overlay.exit()
@@ -504,7 +506,7 @@ func (g *godit) set_overlay_mode(m overlay_mode) {
 }
 
 // used by extended mode only
-func (g *godit) save_active_buffer(raw bool) {
+func (g *gemacs) save_active_buffer(raw bool) {
 	v := g.active.leaf
 	b := v.buf
 
@@ -530,9 +532,9 @@ func (g *godit) save_active_buffer(raw bool) {
 }
 
 // "lemp" stands for "line edit mode params"
-func (g *godit) switch_buffer_lemp() line_edit_mode_params {
+func (g *gemacs) switch_buffer_lemp() line_edit_mode_params {
 	return line_edit_mode_params{
-		ac_decide:      make_godit_buffer_ac_decide(g),
+		ac_decide:      make_gemacs_buffer_ac_decide(g),
 		prompt:         "Buffer:",
 		init_autocompl: true,
 
@@ -550,7 +552,7 @@ func (g *godit) switch_buffer_lemp() line_edit_mode_params {
 }
 
 // "lemp" stands for "line edit mode params"
-func (g *godit) open_buffer_lemp() line_edit_mode_params {
+func (g *gemacs) open_buffer_lemp() line_edit_mode_params {
 	return line_edit_mode_params{
 		ac_decide: filesystem_line_ac_decide,
 		prompt:    "Find file:",
@@ -567,7 +569,7 @@ func (g *godit) open_buffer_lemp() line_edit_mode_params {
 }
 
 // "lemp" stands for "line edit mode params"
-func (g *godit) save_as_buffer_lemp(raw bool) line_edit_mode_params {
+func (g *gemacs) save_as_buffer_lemp(raw bool) line_edit_mode_params {
 	v := g.active.leaf
 	b := v.buf
 	return line_edit_mode_params{
@@ -594,7 +596,7 @@ func (g *godit) save_as_buffer_lemp(raw bool) line_edit_mode_params {
 }
 
 // "lemp" stands for "line edit mode params"
-func (g *godit) filter_region_lemp() line_edit_mode_params {
+func (g *gemacs) filter_region_lemp() line_edit_mode_params {
 	v := g.active.leaf
 	return line_edit_mode_params{
 		ac_decide: filesystem_line_ac_decide,
@@ -625,7 +627,7 @@ func (g *godit) filter_region_lemp() line_edit_mode_params {
 }
 
 // "lemp" stands for "line edit mode params"
-func (g *godit) goto_line_lemp() line_edit_mode_params {
+func (g *gemacs) goto_line_lemp() line_edit_mode_params {
 	v := g.active.leaf
 	return line_edit_mode_params{
 		prompt: "Goto line:",
@@ -649,7 +651,7 @@ func (g *godit) goto_line_lemp() line_edit_mode_params {
 }
 
 // "lemp" stands for "line edit mode params"
-func (g *godit) search_and_replace_lemp1() line_edit_mode_params {
+func (g *gemacs) search_and_replace_lemp1() line_edit_mode_params {
 	var prompt string
 	if len(g.s_and_r_last_word) != 0 {
 		prompt = fmt.Sprintf("Replace string [%s]:", g.s_and_r_last_word)
@@ -678,7 +680,7 @@ func (g *godit) search_and_replace_lemp1() line_edit_mode_params {
 }
 
 // "lemp" stands for "line edit mode params"
-func (g *godit) search_and_replace_lemp2(word []byte) line_edit_mode_params {
+func (g *gemacs) search_and_replace_lemp2(word []byte) line_edit_mode_params {
 	var prompt string
 	if len(g.s_and_r_last_repl) != 0 {
 		prompt = fmt.Sprintf("Replace string %s with [%s]:", word, g.s_and_r_last_repl)
@@ -708,7 +710,7 @@ func (g *godit) search_and_replace_lemp2(word []byte) line_edit_mode_params {
 	}
 }
 
-func (g *godit) stop_recording() {
+func (g *gemacs) stop_recording() {
 	if !g.recording {
 		g.set_status("Not defining keyboard macro")
 		return
@@ -724,14 +726,14 @@ func (g *godit) stop_recording() {
 	}
 }
 
-func (g *godit) replay_macro() {
+func (g *gemacs) replay_macro() {
 	for _, keyev := range g.keymacros {
 		ev := keyev.to_termbox_event()
 		g.handle_event(&ev)
 	}
 }
 
-func (g *godit) view_context() view_context {
+func (g *gemacs) view_context() view_context {
 	return view_context{
 		set_status: func(f string, args ...interface{}) {
 			g.set_status(f, args...)
@@ -741,7 +743,7 @@ func (g *godit) view_context() view_context {
 	}
 }
 
-func (g *godit) has_unsaved_buffers() bool {
+func (g *gemacs) has_unsaved_buffers() bool {
 	for _, buf := range g.buffers {
 		if !buf.synced_with_disk() {
 			return true
@@ -758,10 +760,10 @@ func main() {
 	defer termbox.Close()
 	termbox.SetInputMode(termbox.InputAlt)
 
-	godit := new_godit(os.Args[1:])
-	godit.resize()
-	godit.draw()
-	termbox.SetCursor(godit.cursor_position())
+	gemacs := new_gemacs(os.Args[1:])
+	gemacs.resize()
+	gemacs.draw()
+	termbox.SetCursor(gemacs.cursor_position())
 	termbox.Flush()
-	godit.main_loop()
+	gemacs.main_loop()
 }

@@ -12,17 +12,18 @@ import (
 
 type extended_mode struct {
 	stub_overlay_mode
-	godit *godit
+	gemacs *gemacs
 }
 
-func init_extended_mode(godit *godit) extended_mode {
-	e := extended_mode{godit: godit}
-	e.godit.set_status("C-x")
+func init_extended_mode(gemacs *gemacs) extended_mode {
+	e := extended_mode{gemacs: gemacs}
+	e.gemacs.set_status("C-x")
 	return e
 }
 
 func (e extended_mode) on_key(ev *termbox.Event) {
-	g := e.godit
+	pp("extended_mode on_key, Ch='%v', ev='%#v'", string(ev.Ch), ev)
+	g := e.gemacs
 	v := g.active.leaf
 	b := v.buf
 

@@ -6,18 +6,18 @@ import (
 
 type autocomplete_mode struct {
 	stub_overlay_mode
-	godit      *godit
+	gemacs     *gemacs
 	origin     cursor_location
 	proposals  []ac_proposal
 	prefix_len int
 	current    int
 }
 
-func init_autocomplete_mode(godit *godit) *autocomplete_mode {
-	view := godit.active.leaf
+func init_autocomplete_mode(gemacs *gemacs) *autocomplete_mode {
+	view := gemacs.active.leaf
 
 	a := new(autocomplete_mode)
-	a.godit = godit
+	a.gemacs = gemacs
 	a.origin = view.cursor
 	a.proposals, a.prefix_len = local_ac(view)
 	a.current = -1
@@ -26,17 +26,17 @@ func init_autocomplete_mode(godit *godit) *autocomplete_mode {
 }
 
 func (a *autocomplete_mode) substitute_next() {
-	view := a.godit.active.leaf
+	view := a.gemacs.active.leaf
 	if a.current != -1 {
 		// undo previous substitution
 		view.undo()
-		a.godit.set_status("") // hide undo status message
+		a.gemacs.set_status("") // hide undo status message
 	}
 
 	a.current++
 	if a.current >= len(a.proposals) {
 		a.current = -1
-		a.godit.set_status("No further expansions found")
+		a.gemacs.set_status("No further expansions found")
 		return
 	}
 
@@ -58,7 +58,7 @@ func (a *autocomplete_mode) substitute_next() {
 }
 
 func (a *autocomplete_mode) on_key(ev *termbox.Event) {
-	g := a.godit
+	g := a.gemacs
 	if ev.Mod&termbox.ModAlt != 0 && ev.Ch == '/' {
 		a.substitute_next()
 		return
