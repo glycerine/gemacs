@@ -201,6 +201,36 @@ func (v *view_tree) sibling() *view_tree {
 	panic("unreachable")
 }
 
+// nextInCycle returns the next view
+// after v, eventually cycling
+// through all views.
+func (v *view_tree) nextInCycle() (ret *view_tree) {
+
+	root := v
+	for root.parent != nil {
+		root = root.parent
+	}
+
+	// find our number
+	var k, our int
+	root.traverse(func(w *view_tree) {
+		if w == v {
+			our = k
+		}
+		k++
+	})
+	// return the view after us
+	tot := k
+	k = 0
+	root.traverse(func(w *view_tree) {
+		if k == (our+1)%tot {
+			ret = w
+		}
+		k++
+	})
+	return
+}
+
 func (v *view_tree) first_leaf_node() *view_tree {
 	if v.left != nil {
 		return v.left.first_leaf_node()

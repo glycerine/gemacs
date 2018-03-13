@@ -88,7 +88,7 @@ func (e extended_mode) on_key(ev *termbox.Event) {
 		case '3':
 			g.split_horizontally()
 		case 'o':
-			sibling := g.active.sibling()
+			sibling := g.active.nextInCycle()
 			if sibling != nil && sibling.leaf != nil {
 				g.active.leaf.deactivate()
 				g.active = sibling
