@@ -54,7 +54,7 @@ View/buffer operations:
   C-x 1            - Kill all views but active
   C-x 2            - Split active view vertically
   C-x 3            - Split active view horizontally
-  C-x o            - Make a sibling view active
+  C-x o            - Cycle through views
   C-x b            - Switch buffer in the active view [prompt]
   C-x k            - Kill buffer in the active view
 
