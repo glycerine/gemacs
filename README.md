@@ -7,8 +7,8 @@ Terminal based, it works anywhere.
 
 In addition to using tcell, release v1.0 improves
 upon `godit` by: (a) improving file auto-completion with tab and enter;
-(b) Ctrl-x Ctr-w does write file, as in traditional emacs;
-View operations is rebound to Ctrl-x Ctrl-v; (c) Ctrl-x `o` cycles
+(b) Ctrl-x Ctr-w does write file, as in traditional emacs -- now
+`view operations` is rebound to Ctrl-x Ctrl-v; (c) Ctrl-x `o` cycles
 through all visible views.
 
 Extensibility being the hallmark of emacsen, `gemacs`
