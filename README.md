@@ -12,7 +12,7 @@ upon `godit` by: (a) improving file auto-completion with tab and enter;
 through all visible views.
 
 Extensibility being the hallmark of emacsen, `gemacs`
-gets its extensibility by begin being both small and written in Go.
+gets its extensibility by being both small and written in Go.
 
 The fast compilation, superior typechecking, and sparse
 design of Go mean that extensibility is actually improved
