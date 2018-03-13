@@ -3,22 +3,21 @@ gemacs: an emacs written in Go
 
 `gemacs` is derived from `godit`, https://github.com/nsf/godit,
 and adapted to use https://github.com/gdamore/tcell for portability.
+Terminal based, it works anywhere.
 
-Release v1.0.2 improves file auto-completion with tab and enter.
+Release v1.0 improves file auto-completion with tab and enter.
 Ctrl-x Ctr-w does write file, as in traditional emacs.
-View operations is rebound to Ctrl-x Ctrl-v.
+View operations is rebound to Ctrl-x Ctrl-v. Ctrl-x `o` cycles
+through all visible views.
 
-Quoting from the original godit readme, with the program name updated
-to avoid confusion.
-
-Screenshots:
-
- * http://nosmileface.ru/images/godit-linux1.png
- * http://nosmileface.ru/images/godit-linux2.png
+Translating from the original godit readme, with the program name updated
+to avoid confusion:
 
 
-Gemacs is an emacs-ish lightweight text editor. Terminal based,
-it works anywhere.
+![screenshot](https://https://github.com/glycerine/gemacs/blob/master/godit-linux1.png)
+
+
+Gemacs is an emacs-ish lightweight text editor.
 
 Gemacs uses many of the emacs key
 bindings and operates using a notion of "micromodes". It's easier to explain
