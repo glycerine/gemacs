@@ -21,7 +21,7 @@ were needed in the time of C with its slow compilation, but that time
 has passed. Keeping with the Go philosophy of minimalism and simplicity,
 there are no plans to add an embedded scripting language
 to `gemacs`. Being MIT licensed, you are welcome to
-fork and derive from it in whatever you like, of course.
+fork and derive from it however you like, of course.
 
 ![screenshot](https://github.com/glycerine/gemacs/blob/master/gemacs-screenshot.png)
 
