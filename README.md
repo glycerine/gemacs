@@ -14,7 +14,7 @@ Translating from the original godit readme, with the program name updated
 to avoid confusion:
 
 
-![screenshot](https://https://github.com/glycerine/gemacs/blob/master/godit-linux1.png)
+![screenshot](https://github.com/glycerine/gemacs/blob/master/godit-linux1.png)
 
 
 Gemacs is an emacs-ish lightweight text editor.
