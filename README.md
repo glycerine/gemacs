@@ -10,10 +10,10 @@ Ctrl-x Ctr-w does write file, as in traditional emacs.
 View operations is rebound to Ctrl-x Ctrl-v. Ctrl-x `o` cycles
 through all visible views.
 
-![screenshot](https://github.com/glycerine/gemacs/blob/master/godit-linux1.png)
+![screenshot](https://github.com/glycerine/gemacs/blob/master/gemacs-screenshot.png)
 
 
-A description translated from the original godit readme:
+A description translated from the godit readme:
 
 Gemacs is an emacs-ish lightweight text editor.
 
