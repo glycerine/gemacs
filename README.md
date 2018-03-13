@@ -5,10 +5,25 @@ gemacs: an emacs written in Go
 and adapted to use https://github.com/gdamore/tcell for portability.
 Terminal based, it works anywhere.
 
-Release v1.0 improves file auto-completion with tab and enter.
-Ctrl-x Ctr-w does write file, as in traditional emacs.
-View operations is rebound to Ctrl-x Ctrl-v. Ctrl-x `o` cycles
+In addition to using tcell, release v1.0 improves
+upon `godit` by: (a) adding file auto-completion with tab and enter;
+(b) Ctrl-x Ctr-w does write file, as in traditional emacs;
+View operations is rebound to Ctrl-x Ctrl-v; (c) Ctrl-x `o` cycles
 through all visible views.
+
+Extensibility being the hallmark of emacsen, `gemacs`
+gets its extensibility by begin being both small and written in Go.
+
+The fast compilation, superior typechecking, and sparse
+design of Go mean that extensibility is actually improved
+compared to the awkward two language approach. Two languages
+were needed in the time of slow compilation, but that time
+has passed.
+
+Keeping with the Go philosophy of minimalism and simplicity,
+there are no plans to add an embedded scripting language
+to `gemacs`. Being MIT licensed, you are welcome to
+fork and derive from it in whatever you like, of course.
 
 ![screenshot](https://github.com/glycerine/gemacs/blob/master/gemacs-screenshot.png)
 
