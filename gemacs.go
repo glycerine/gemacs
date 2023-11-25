@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"unicode"
 
+	"github.com/gdamore/tcell/encoding"
 	"github.com/gdamore/tcell/termbox"
 	"github.com/glycerine/verb"
 	"github.com/nsf/tulib"
@@ -17,6 +18,7 @@ import (
 var pp = verb.PP
 
 func init() {
+	encoding.Register()
 	// debugging tools.
 	/*
 		f, err := os.Create("./log.gemacs.debug")
