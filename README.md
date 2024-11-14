@@ -1,6 +1,13 @@
 gemacs: an emacs written in Go
 ==============================
 
+Update 2024 Nov 14: gemacs was made module compatible. It
+can be installed with, for example (using go1.23.3 or later):
+
+~~~
+go install github.com/glycerine/gemacs@latest
+~~~
+
 `gemacs` is derived from `godit`, https://github.com/nsf/godit,
 and adapted to use https://github.com/gdamore/tcell for portability.
 Terminal based, it works anywhere.
