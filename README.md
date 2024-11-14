@@ -8,6 +8,10 @@ can be installed with, for example (using go1.23.3 or later):
 go install github.com/glycerine/gemacs@latest
 ~~~
 
+That said, I don't have time to maintain or add features to gemacs.
+You probably want an editor that is actively maintained, such
+as https://micro-editor.github.io/ Now back to our regularly README...
+
 `gemacs` is derived from `godit`, https://github.com/nsf/godit,
 and adapted to use https://github.com/gdamore/tcell for portability.
 Terminal based, it works anywhere.
