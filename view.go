@@ -3,8 +3,8 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/gdamore/tcell/termbox"
-	"github.com/nsf/tulib"
+	"github.com/glycerine/tcell_old_hacked_up/termbox"
+	"github.com/glycerine/tulib"
 	"os"
 	"strings"
 	"unicode/utf8"

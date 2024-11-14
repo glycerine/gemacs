@@ -9,10 +9,10 @@ import (
 	"strconv"
 	"unicode"
 
-	"github.com/gdamore/tcell/encoding"
-	"github.com/gdamore/tcell/termbox"
+	"github.com/glycerine/tcell_old_hacked_up/encoding"
+	"github.com/glycerine/tcell_old_hacked_up/termbox"
 	"github.com/glycerine/verb"
-	"github.com/nsf/tulib"
+	"github.com/glycerine/tulib"
 )
 
 var pp = verb.PP

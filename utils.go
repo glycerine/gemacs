@@ -2,7 +2,7 @@ package main
 
 import (
 	"bytes"
-	"github.com/nsf/tulib"
+	"github.com/glycerine/tulib"
 	"os"
 	"path/filepath"
 	"strconv"

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/nsf/tulib"
+	"github.com/glycerine/tulib"
 )
 
 //----------------------------------------------------------------------------
