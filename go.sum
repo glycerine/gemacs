@@ -1,9 +1,9 @@
 github.com/gdamore/encoding v1.0.1 h1:YzKZckdBL6jVt2Gc+5p82qhrGiqMdG/eNs6Wy0u3Uhw=
 github.com/gdamore/encoding v1.0.1/go.mod h1:0Z0cMFinngz9kS1QfMjCP8TY7em3bZYeeklsSDPivEo=
-github.com/glycerine/tcell_old_hacked_up v0.0.0-20241114211029-01edf02a2f78 h1:y0G5CuK9Iseh2eLDQzMgpxQeqwMJKdqWvQPy0tp3DkI=
-github.com/glycerine/tcell_old_hacked_up v0.0.0-20241114211029-01edf02a2f78/go.mod h1:4rt11z0AlOOC0eEr4/ElwsQ4t6UvDDjmPPyA0Nmdf84=
-github.com/glycerine/tulib v0.0.0-20241114211240-ef5a453ff642 h1:/2xgK0lafEwjHp47dexS/GjQfLi6RIpDZP8WtEygZuU=
-github.com/glycerine/tulib v0.0.0-20241114211240-ef5a453ff642/go.mod h1:99neMSjTZbn63DHgkk31hiE4o02yCLsAI4542XuWVlc=
+github.com/glycerine/tcell_old_hacked_up v0.0.0-20241114213350-ca25db565448 h1:Z4c4SLewh9e4L6UTyf2CDRd5ITVIUizeWr6Ik7YRcsg=
+github.com/glycerine/tcell_old_hacked_up v0.0.0-20241114213350-ca25db565448/go.mod h1:5X1I7OZZaPrq0XAd+9g+z0NLv89EbvIi7qqKuA4AxiU=
+github.com/glycerine/tulib v0.0.0-20241114213441-148044a2d028 h1:5Man1ZrC/RqygM/N1qUDajCZGMccEaRGetREccCaKkw=
+github.com/glycerine/tulib v0.0.0-20241114213441-148044a2d028/go.mod h1:99neMSjTZbn63DHgkk31hiE4o02yCLsAI4542XuWVlc=
 github.com/glycerine/verb v0.0.0-20180617012747-2d06a38209d2 h1:pazy6YBiVz5bT4HhF3evansulJ44LtnvQ1E8+DjQqZI=
 github.com/glycerine/verb v0.0.0-20180617012747-2d06a38209d2/go.mod h1:sK3THwREXPiMLvb5KpGgavyawNQnO28sSvdNp+z8J3E=
 github.com/gopherjs/gopherjs v1.17.2 h1:fQnZVsXk8uxXIStYb0N4bGk7jeyTalG/wsZjQ25dO0g=
