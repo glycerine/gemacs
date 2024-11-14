@@ -14,6 +14,7 @@ as https://micro-editor.github.io/ Notice also our open bug
 about Ctrl-z (and pasting more than 11 characters from
 the terminal) which we 
 don't know how to fix https://github.com/glycerine/gemacs/issues/4 ...
+Also it uses an antiquated and hacked up version of tcell.
 
 Now back to our regularly scheduled README...
 
