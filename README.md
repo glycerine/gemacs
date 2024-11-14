@@ -1,4 +1,4 @@
-gemacs: an emacs written in Go
+gemacs: an (ersatz) emacs written in Go
 ==============================
 
 Update 2024 Nov 14: gemacs was made module compatible. It
@@ -11,7 +11,8 @@ go install github.com/glycerine/gemacs@latest
 That said, I don't have time to maintain or add features to gemacs.
 You probably want an editor that is actively maintained, such
 as https://micro-editor.github.io/ Notice also our open bug
-about Ctrl-z (and pasting more than 11 characters) which we 
+about Ctrl-z (and pasting more than 11 characters from
+the terminal) which we 
 don't know how to fix https://github.com/glycerine/gemacs/issues/4 ...
 
 Now back to our regularly README...
