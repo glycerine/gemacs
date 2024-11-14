@@ -10,7 +10,11 @@ go install github.com/glycerine/gemacs@latest
 
 That said, I don't have time to maintain or add features to gemacs.
 You probably want an editor that is actively maintained, such
-as https://micro-editor.github.io/ Now back to our regularly README...
+as https://micro-editor.github.io/ Notice also our open bug
+about Ctrl-z (and pasting more than 11 characters) which we 
+don't know how to fix https://github.com/glycerine/gemacs/issues/4 ...
+
+Now back to our regularly README...
 
 `gemacs` is derived from `godit`, https://github.com/nsf/godit,
 and adapted to use https://github.com/gdamore/tcell for portability.
