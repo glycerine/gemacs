@@ -3,7 +3,7 @@ module github.com/glycerine/gemacs
 go 1.23.3
 
 require (
-	github.com/glycerine/tcell_old_hacked_up v0.0.0-20241125025918-f1ba3a78d6cc
+	github.com/glycerine/tcell_old_hacked_up v0.0.0-20241125030245-39ea5f325070
 	github.com/glycerine/tulib v0.0.0-20241114213441-148044a2d028
 	github.com/glycerine/verb v0.0.0-20180617012747-2d06a38209d2
 )
