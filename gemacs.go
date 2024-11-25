@@ -9,10 +9,11 @@ import (
 	"strconv"
 	"unicode"
 
+	"github.com/glycerine/tcell_old_hacked_up"
 	"github.com/glycerine/tcell_old_hacked_up/encoding"
 	"github.com/glycerine/tcell_old_hacked_up/termbox"
-	"github.com/glycerine/verb"
 	"github.com/glycerine/tulib"
+	"github.com/glycerine/verb"
 )
 
 var pp = verb.PP
@@ -756,6 +757,8 @@ func (g *gemacs) has_unsaved_buffers() bool {
 }
 
 func main() {
+	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
+
 	err := termbox.Init()
 	if err != nil {
 		panic(err)
