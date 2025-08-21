@@ -349,7 +349,7 @@ func (g *gemacs) draw() {
 	} else {
 		cx, cy = g.cursor_position()
 	}
-	termbox.SetCursor(cx, cy)
+	GetGlobalScreen().ShowCursor(cx, cy)
 }
 
 func (g *gemacs) draw_status() {
@@ -453,7 +453,7 @@ func (g *gemacs) main_loop() {
 			}
 			g.consume_more_events()
 			g.draw()
-			termbox.Flush()
+			GetGlobalScreen().Show()
 		}
 	}
 }
@@ -493,7 +493,7 @@ func (g *gemacs) handle_event(ev *termbox.Event) bool {
 			return false
 		}
 	case termbox.EventResize:
-		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+		GetGlobalScreen().Clear()
 		g.resize()
 		if g.overlay != nil {
 			g.overlay.on_resize(ev)
@@ -821,7 +821,8 @@ func main() {
 	
 	gemacs.resize()
 	gemacs.draw()
-	termbox.SetCursor(gemacs.cursor_position())
-	termbox.Flush()
+	cx, cy := gemacs.cursor_position()
+	GetGlobalScreen().ShowCursor(cx, cy)
+	GetGlobalScreen().Show()
 	gemacs.main_loop()
 }
