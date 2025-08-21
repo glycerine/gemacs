@@ -85,11 +85,14 @@ type gemacs struct {
 	isearch_last_word []byte
 	s_and_r_last_word []byte
 	s_and_r_last_repl []byte
+	syntax_highlighter *SyntaxHighlighter
 }
 
 func new_gemacs(filenames []string) *gemacs {
 	g := new(gemacs)
 	g.buffers = make([]*buffer, 0, 20)
+	g.syntax_highlighter = NewSyntaxHighlighter()
+	
 	for _, filename := range filenames {
 		g.new_buffer_from_file(filename)
 	}

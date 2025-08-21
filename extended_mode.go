@@ -162,6 +162,25 @@ func (e extended_mode) on_key(ev *termbox.Event) {
 		case '!':
 			g.set_overlay_mode(init_line_edit_mode(g, g.filter_region_lemp()))
 			return
+		case 'h':
+			// Toggle syntax highlighting
+			if g.syntax_highlighter != nil {
+				enabled := !g.syntax_highlighter.IsEnabled()
+				g.syntax_highlighter.SetEnabled(enabled)
+				if enabled {
+					g.set_status("Syntax highlighting enabled")
+				} else {
+					g.set_status("Syntax highlighting disabled")
+				}
+				// Refresh all views
+				g.views.traverse(func(vt *view_tree) {
+					if vt.leaf != nil {
+						vt.leaf.dirty = dirty_everything
+					}
+				})
+			} else {
+				g.set_status("Syntax highlighter not available")
+			}
 		default:
 			goto undefined
 		}

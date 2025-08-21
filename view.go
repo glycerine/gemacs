@@ -149,6 +149,11 @@ type view struct {
 	tags             []view_tag
 	pressesSinceEsc  int64
 	g                *gemacs
+	
+	// Syntax highlighting
+	syntax_tokens    map[int][]Token // line number -> tokens
+	syntax_language  *Language
+	syntax_theme     *Theme
 }
 
 func new_view(ctx view_context, buf *buffer, g *gemacs) *view {
@@ -161,6 +166,14 @@ func new_view(ctx view_context, buf *buffer, g *gemacs) *view {
 	v.highlight_ranges = make([]byte_range, 0, 10)
 	v.tags = make([]view_tag, 0, 10)
 	v.pressesSinceEsc = 4
+	
+	// Initialize syntax highlighting
+	v.syntax_tokens = make(map[int][]Token)
+	if g.syntax_highlighter != nil {
+		v.syntax_language = g.syntax_highlighter.DetectLanguage(buf.path)
+		v.syntax_theme = g.syntax_highlighter.GetTheme("default")
+	}
+	
 	return v
 }
 
@@ -186,6 +199,9 @@ func (v *view) attach(b *buffer) {
 	v.view_location = b.loc
 	b.add_view(v)
 	v.dirty = dirty_everything
+	
+	// Update syntax highlighting for new buffer
+	v.update_syntax_language()
 }
 
 func (v *view) detach() {
@@ -1082,6 +1098,15 @@ func (v *view) on_insert(a *action) {
 	v.move_cursor_to(c)
 	v.last_cursor_voffset = v.cursor_voffset
 	v.dirty = dirty_everything
+	
+	// Invalidate syntax tokens for affected lines
+	if len(a.lines) > 0 {
+		// New lines were added, invalidate from current line onwards
+		v.invalidate_syntax_tokens(a.cursor.line_num, -1)
+	} else {
+		// Text was inserted on the current line
+		v.invalidate_syntax_tokens(a.cursor.line_num, a.cursor.line_num)
+	}
 }
 
 func (v *view) on_delete(a *action) {
@@ -1109,6 +1134,15 @@ func (v *view) on_delete(a *action) {
 	v.move_cursor_to(c)
 	v.last_cursor_voffset = v.cursor_voffset
 	v.dirty = dirty_everything
+	
+	// Invalidate syntax tokens for affected lines
+	if len(a.lines) > 0 {
+		// Lines were deleted, invalidate from current line onwards
+		v.invalidate_syntax_tokens(a.cursor.line_num, -1)
+	} else {
+		// Text was deleted from the current line
+		v.invalidate_syntax_tokens(a.cursor.line_num, a.cursor.line_num)
+	}
 }
 
 func (v *view) on_vcommand(cmd vcommand, arg rune) {
@@ -1394,11 +1428,85 @@ func (v *view) make_cell(line, offset int, ch rune) termbox.Cell {
 		Fg: tag.fg,
 		Bg: tag.bg,
 	}
+	
+	// Check for syntax highlighting first
+	if v.syntax_theme != nil && v.syntax_language != nil && v.g.syntax_highlighter.IsEnabled() {
+		if tokenType := v.get_token_type_at(line, offset); tokenType != TokenNone {
+			if color, exists := v.syntax_theme.Colors[tokenType]; exists {
+				cell.Fg = color
+			}
+		}
+	}
+	
+	// Search highlighting takes precedence
 	if v.in_one_of_highlight_ranges(offset) {
 		cell.Fg = hl_fg
 		cell.Bg = hl_bg
 	}
 	return cell
+}
+
+// get_token_type_at returns the token type at the given line and offset
+func (v *view) get_token_type_at(line_num, offset int) TokenType {
+	if tokens, exists := v.syntax_tokens[line_num]; exists {
+		for _, token := range tokens {
+			if offset >= token.Start && offset < token.End {
+				return token.Type
+			}
+		}
+	} else {
+		// Tokenize the line if not already done
+		v.tokenize_line(line_num)
+		return v.get_token_type_at(line_num, offset)
+	}
+	return TokenNone
+}
+
+// tokenize_line tokenizes a specific line and caches the result
+func (v *view) tokenize_line(line_num int) {
+	if v.syntax_language == nil || !v.g.syntax_highlighter.IsEnabled() {
+		return
+	}
+	
+	// Find the line data
+	line := v.buf.first_line
+	current_line_num := 1
+	for line != nil && current_line_num < line_num {
+		line = line.next
+		current_line_num++
+	}
+	
+	if line != nil {
+		tokens := v.g.syntax_highlighter.TokenizeLine(line.data, v.syntax_language)
+		v.syntax_tokens[line_num] = tokens
+	}
+}
+
+// invalidate_syntax_tokens invalidates cached tokens for a range of lines
+func (v *view) invalidate_syntax_tokens(start_line, end_line int) {
+	if start_line < 0 {
+		start_line = 1
+	}
+	if end_line < 0 {
+		end_line = v.buf.lines_n
+	}
+	
+	for line_num := start_line; line_num <= end_line; line_num++ {
+		delete(v.syntax_tokens, line_num)
+	}
+}
+
+// update_syntax_language updates the syntax language when buffer path changes
+func (v *view) update_syntax_language() {
+	if v.g.syntax_highlighter != nil {
+		old_lang := v.syntax_language
+		v.syntax_language = v.g.syntax_highlighter.DetectLanguage(v.buf.path)
+		if old_lang != v.syntax_language {
+			// Language changed, invalidate all tokens
+			v.syntax_tokens = make(map[int][]Token)
+			v.dirty = dirty_everything
+		}
+	}
 }
 
 func (v *view) cleanup_trailing_whitespaces() {
