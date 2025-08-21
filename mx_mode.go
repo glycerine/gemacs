@@ -83,9 +83,15 @@ func (m mx_mode) on_key(ev *termbox.Event) {
 		commandNames = append(commandNames, name)
 	}
 	
+	// Capture the initial character if it's printable
+	initialContent := ""
+	if ev.Ch != 0 && ev.Ch >= 32 { // Printable character
+		initialContent = string(ev.Ch)
+	}
+	
 	lemp := line_edit_mode_params{
 		prompt:        "M-x ",
-		initial_content: "",
+		initial_content: initialContent,
 		ac_decide:     func(v *view) ac_func {
 			return func(v *view) ([]ac_proposal, int) {
 				// Get current input from the line
