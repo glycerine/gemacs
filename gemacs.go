@@ -17,6 +17,11 @@ import (
 
 var pp = verb.PP
 
+var default_label_params = LabelParams{
+	Fg: tcell.ColorDefault,
+	Bg: tcell.ColorDefault,
+}
+
 func init() {
 	encoding.Register()
 	// debugging tools.
@@ -353,13 +358,12 @@ func (g *gemacs) draw() {
 }
 
 func (g *gemacs) draw_status() {
-	lp := default_label_params
 	r := g.uibuf.Rect
 	r.Y = r.Height - 1
 	r.Height = 1
-	statusStyle := MakeStyle(lp.Fg, lp.Bg)
+	statusStyle := MakeStyle(default_label_params.Fg, default_label_params.Bg)
 	g.uibuf.Fill(r, ' ', statusStyle)
-	g.uibuf.DrawLabel(r, &lp, string(g.statusbuf.Bytes()))
+	g.uibuf.DrawLabel(r, &default_label_params, string(g.statusbuf.Bytes()))
 }
 
 func (g *gemacs) composite_recursively(v *view_tree) {
@@ -375,7 +379,7 @@ func (g *gemacs) composite_recursively(v *view_tree) {
 		splitter.X -= 1
 		splitter.Width = 1
 		splitter.Height -= 1
-		splitterStyle := MakeStyle(termbox.AttrReverse, termbox.AttrReverse)
+		splitterStyle := MakeStyle(tcell.ColorWhite, tcell.ColorWhite)
 		g.uibuf.Fill(splitter, '|', splitterStyle)
 	} else {
 		g.composite_recursively(v.top)
@@ -453,7 +457,7 @@ func (g *gemacs) main_loop() {
 			}
 			g.consume_more_events()
 			g.draw()
-			termbox.Flush()
+			GetGlobalScreen().Show()
 		}
 	}
 }
@@ -493,7 +497,7 @@ func (g *gemacs) handle_event(ev *termbox.Event) bool {
 			return false
 		}
 	case termbox.EventResize:
-		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+		GetGlobalScreen().Clear()
 		g.resize()
 		if g.overlay != nil {
 			g.overlay.on_resize(ev)
@@ -796,27 +800,33 @@ func (g *gemacs) set_tab_size_lemp() line_edit_mode_params {
 func main() {
 	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
 
-	// Use termbox initialization which properly sets up the screen
-	err := termbox.Init()
+	var screen tcell.Screen
+	var err error
+
+	screen, err = tcell.NewScreen()
 	if err != nil {
-		panic(err)
+		screen = tcell.NewSimulationScreen("UTF-8")
 	}
-	defer termbox.Close()
-	termbox.SetInputMode(termbox.InputAlt)
+
+	err = screen.Init()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to initialize screen: %v", err)
+		os.Exit(1)
+	}
+	GlobalScreen = screen
+	defer GlobalScreen.Fini()
 
 	gemacs := new_gemacs(os.Args[1:])
-	
+
 	// Cleanup shells on exit
 	defer func() {
 		for name := range gemacs.shell_manager.shells {
 			gemacs.shell_manager.CloseShell(name)
 		}
 	}()
-	
+
 	gemacs.resize()
 	gemacs.draw()
-	cx, cy := gemacs.cursor_position()
-	termbox.SetCursor(cx, cy)
-	termbox.Flush()
+	GlobalScreen.Show()
 	gemacs.main_loop()
 }

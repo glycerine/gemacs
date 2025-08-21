@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/gdamore/tcell/v2"
 	"github.com/gdamore/tcell/v2/termbox"
 )
 
@@ -18,7 +19,7 @@ const view_names = `1234567890abcdefgijlmnpqrstuwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ`
 var view_op_mode_name = []byte("view operations mode")
 
 func init_view_op_mode(gemacs *gemacs) view_op_mode {
-	termbox.HideCursor()
+	GlobalScreen.HideCursor()
 	v := view_op_mode{gemacs: gemacs}
 	return v
 }
@@ -28,10 +29,10 @@ func (v view_op_mode) draw() {
 	r := g.uibuf.Rect
 	r.Y = r.Height - 1
 	r.Height = 1
-	fillStyle := MakeStyle(termbox.ColorDefault, termbox.ColorDefault)
+	fillStyle := MakeStyle(tcell.ColorDefault, tcell.ColorDefault)
 	g.uibuf.Fill(r, ' ', fillStyle)
 	lp := default_label_params
-	lp.Fg = termbox.ColorYellow
+	lp.Fg = tcell.ColorYellow
 	g.uibuf.DrawLabel(r, &lp, string(view_op_mode_name))
 
 	// draw views names
@@ -40,22 +41,19 @@ func (v view_op_mode) draw() {
 		if name >= len(view_names) {
 			return
 		}
-		bg := termbox.ColorBlue
+		bg := tcell.ColorBlue
 		if leaf == g.active {
-			bg = termbox.ColorRed
+			bg = tcell.ColorRed
 		}
 		r := leaf.Rect
 		r.Width = 3
 		r.Height = 1
 		x := r.X + 1
 		y := r.Y
-		bgStyle := MakeStyle(termbox.ColorDefault, bg)
+		bgStyle := MakeStyle(tcell.ColorDefault, bg)
 		g.uibuf.Fill(r, ' ', bgStyle)
-		g.uibuf.Set(x, y, termbox.Cell{
-			Fg: termbox.ColorWhite | termbox.AttrBold,
-			Bg: bg,
-			Ch: rune(view_names[name]),
-		})
+		style := tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(bg).Bold(true)
+		g.uibuf.SetContent(x, y, rune(view_names[name]), nil, style)
 		name++
 	})
 
@@ -68,32 +66,26 @@ func (v view_op_mode) draw() {
 	hr.X += (r.Width - 1) / 2
 	hr.Width = 1
 	hr.Height = 3
-	hrStyle := MakeStyle(termbox.ColorWhite, termbox.ColorRed)
+	hrStyle := MakeStyle(tcell.ColorWhite, tcell.ColorRed)
 	g.uibuf.Fill(hr, '|', hrStyle)
 
 	x = hr.X
 	y = hr.Y + 1
-	g.uibuf.Set(x, y, termbox.Cell{
-		Fg: termbox.ColorWhite | termbox.AttrBold,
-		Bg: termbox.ColorRed,
-		Ch: 'h',
-	})
+	style := tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorRed).Bold(true)
+	g.uibuf.SetContent(x, y, 'h', nil, style)
 
 	// vertical ----------------------
 	vr := r
 	vr.Y += (r.Height - 1) / 2
 	vr.Height = 1
 	vr.Width = 5
-	vrStyle := MakeStyle(termbox.ColorWhite, termbox.ColorRed)
+	vrStyle := MakeStyle(tcell.ColorWhite, tcell.ColorRed)
 	g.uibuf.Fill(vr, '-', vrStyle)
 
 	x = vr.X + 2
 	y = vr.Y
-	g.uibuf.Set(x, y, termbox.Cell{
-		Fg: termbox.ColorWhite | termbox.AttrBold,
-		Bg: termbox.ColorRed,
-		Ch: 'v',
-	})
+	style = tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorRed).Bold(true)
+	g.uibuf.SetContent(x, y, 'v', nil, style)
 }
 
 func (v view_op_mode) select_name(ch rune) *view_tree {

@@ -2,7 +2,7 @@ package main
 
 import (
 	"bytes"
-	"github.com/gdamore/tcell/v2/termbox"
+	"github.com/gdamore/tcell/v2"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -273,15 +273,15 @@ func (ac *autocompl) draw_onto(buf *ScreenBuffer, x, y int) {
 	r.Width--
 	r.Height = 1
 	for i := 0; i < dst.Height; i++ {
-		lp.Fg = termbox.ColorBlack
-		lp.Bg = termbox.ColorWhite
+		lp.Fg = tcell.ColorBlack
+		lp.Bg = tcell.ColorWhite
 
 		n := ac.view + i
 		if n == ac.cursor {
-			lp.Fg = termbox.ColorWhite
-			lp.Bg = termbox.ColorBlue
+			lp.Fg = tcell.ColorWhite
+			lp.Bg = tcell.ColorBlue
 		}
-		cellStyle := MakeStyle(termbox.Attribute(lp.Fg), termbox.Attribute(lp.Bg))
+		cellStyle := MakeStyle(lp.Fg, lp.Bg)
 		buf.Fill(r, ' ', cellStyle)
 		buf.DrawLabel(r, &lp, string(ac.actual_proposals()[n].display))
 
@@ -289,7 +289,7 @@ func (ac *autocompl) draw_onto(buf *ScreenBuffer, x, y int) {
 		if i == slider_i {
 			sr = slider_r
 		}
-		sliderStyle := MakeStyle(termbox.ColorWhite, termbox.ColorBlue)
+		sliderStyle := MakeStyle(tcell.ColorWhite, tcell.ColorBlue)
 		buf.SetContent(r.X+r.Width, r.Y, sr, nil, sliderStyle)
 		r.Y++
 	}

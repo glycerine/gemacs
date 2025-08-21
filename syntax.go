@@ -6,6 +6,7 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/gdamore/tcell/v2"
 	"github.com/gdamore/tcell/v2/termbox"
 )
 
@@ -62,7 +63,7 @@ type SyntaxHighlighter struct {
 // Theme defines color mappings for token types
 type Theme struct {
 	Name   string
-	Colors map[TokenType]termbox.Attribute
+	Colors map[TokenType]tcell.Color
 }
 
 // NewSyntaxHighlighter creates a new syntax highlighter
@@ -166,18 +167,18 @@ func (sh *SyntaxHighlighter) initThemes() {
 	// Default theme
 	defaultTheme := &Theme{
 		Name: "default",
-		Colors: map[TokenType]termbox.Attribute{
-			TokenKeyword:      termbox.ColorMagenta,
-			TokenString:       termbox.ColorGreen,
-			TokenComment:      termbox.ColorCyan,
-			TokenNumber:       termbox.ColorYellow,
-			TokenOperator:     termbox.ColorRed,
-			TokenIdentifier:   termbox.ColorDefault,
-			TokenType_:        termbox.ColorBlue,
-			TokenFunction:     termbox.ColorBlue,
-			TokenConstant:     termbox.ColorYellow,
-			TokenPreprocessor: termbox.ColorMagenta,
-			TokenSpecial:      termbox.ColorRed,
+		Colors: map[TokenType]tcell.Color{
+			TokenKeyword:      tcell.Color(termbox.ColorMagenta),
+			TokenString:       tcell.Color(termbox.ColorGreen),
+			TokenComment:      tcell.Color(termbox.ColorCyan),
+			TokenNumber:       tcell.Color(termbox.ColorYellow),
+			TokenOperator:     tcell.Color(termbox.ColorRed),
+			TokenIdentifier:   tcell.Color(termbox.ColorDefault),
+			TokenType_:        tcell.Color(termbox.ColorBlue),
+			TokenFunction:     tcell.Color(termbox.ColorBlue),
+			TokenConstant:     tcell.Color(termbox.ColorYellow),
+			TokenPreprocessor: tcell.Color(termbox.ColorMagenta),
+			TokenSpecial:      tcell.Color(termbox.ColorRed),
 		},
 	}
 	sh.themes["default"] = defaultTheme
@@ -185,18 +186,18 @@ func (sh *SyntaxHighlighter) initThemes() {
 	// Dark theme
 	darkTheme := &Theme{
 		Name: "dark",
-		Colors: map[TokenType]termbox.Attribute{
-			TokenKeyword:      termbox.ColorMagenta | termbox.AttrBold,
-			TokenString:       termbox.ColorGreen,
-			TokenComment:      termbox.ColorCyan,
-			TokenNumber:       termbox.ColorYellow,
-			TokenOperator:     termbox.ColorWhite,
-			TokenIdentifier:   termbox.ColorWhite,
-			TokenType_:        termbox.ColorBlue | termbox.AttrBold,
-			TokenFunction:     termbox.ColorCyan | termbox.AttrBold,
-			TokenConstant:     termbox.ColorYellow | termbox.AttrBold,
-			TokenPreprocessor: termbox.ColorMagenta,
-			TokenSpecial:      termbox.ColorWhite,
+		Colors: map[TokenType]tcell.Color{
+			TokenKeyword:      tcell.Color(termbox.ColorMagenta),
+			TokenString:       tcell.Color(termbox.ColorGreen),
+			TokenComment:      tcell.Color(termbox.ColorCyan),
+			TokenNumber:       tcell.Color(termbox.ColorYellow),
+			TokenOperator:     tcell.Color(termbox.ColorWhite),
+			TokenIdentifier:   tcell.Color(termbox.ColorWhite),
+			TokenType_:        tcell.Color(termbox.ColorBlue),
+			TokenFunction:     tcell.Color(termbox.ColorCyan),
+			TokenConstant:     tcell.Color(termbox.ColorYellow),
+			TokenPreprocessor: tcell.Color(termbox.ColorMagenta),
+			TokenSpecial:      tcell.Color(termbox.ColorWhite),
 		},
 	}
 	sh.themes["dark"] = darkTheme

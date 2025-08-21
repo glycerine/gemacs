@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/gdamore/tcell/v2"
 	"github.com/gdamore/tcell/v2/termbox"
 	"strings"
 	"unicode/utf8"
@@ -86,10 +87,10 @@ func (l *line_edit_mode) draw() {
 		0, ui.Height - 1,
 		l.prompt_w + 1, 1,
 	}
-	promptStyle := MakeStyle(termbox.ColorDefault, termbox.ColorDefault)
+	promptStyle := MakeStyle(tcell.ColorDefault, tcell.ColorDefault)
 	ui.Fill(prompt_r, ' ', promptStyle)
 	lp := default_label_params
-	lp.Fg = termbox.ColorCyan
+	lp.Fg = tcell.Color(termbox.ColorCyan)
 	ui.DrawLabel(prompt_r, &lp, string(l.prompt))
 
 	// update line view

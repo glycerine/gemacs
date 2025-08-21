@@ -45,13 +45,7 @@ var invisible_rune_table = []rune{
 	'_',  // 31
 }
 
-func make_godit_default_label_params() LabelParams {
-	lp := DefaultLabelParams
-	lp.Ellipsis = '~'
-	return lp
-}
 
-var default_label_params = make_godit_default_label_params()
 
 // somewhat close to what wcwidth does, except rune_width doesn't return 0 or
 // -1, it's always 1 or 2

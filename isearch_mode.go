@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"github.com/gdamore/tcell/v2"
 	"github.com/gdamore/tcell/v2/termbox"
 	"unicode/utf8"
 )
@@ -96,8 +97,8 @@ func (m *isearch_mode) search(next bool) {
 			beg_offset: cursor.boffset,
 			end_line:   cursor.line_num,
 			end_offset: cursor.boffset + len(m.last_word),
-			fg:         termbox.ColorCyan,
-			bg:         termbox.ColorMagenta,
+			fg:         tcell.Color(termbox.ColorCyan),
+			bg:         tcell.Color(termbox.ColorMagenta),
 		})
 		if !m.backward {
 			cursor.boffset += len(m.last_word)

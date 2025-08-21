@@ -15,13 +15,13 @@ import (
 //----------------------------------------------------------------------------
 
 // makeStyle creates a tcell Style from termbox attributes
-func makeStyle(fg, bg termbox.Attribute) tcell.Style {
+func makeStyle(fg, bg tcell.Color) tcell.Style {
 	style := tcell.StyleDefault
-	if fg != termbox.ColorDefault {
-		style = style.Foreground(tcell.PaletteColor(int(fg) - 1))
+	if fg != tcell.ColorDefault {
+		style = style.Foreground(fg)
 	}
-	if bg != termbox.ColorDefault {
-		style = style.Background(tcell.PaletteColor(int(bg) - 1))
+	if bg != tcell.ColorDefault {
+		style = style.Background(bg)
 	}
 	return style
 }
@@ -87,8 +87,8 @@ func (r byte_range) includes(offset int) bool {
 	return r.begin <= offset && r.end > offset
 }
 
-const hl_fg = termbox.ColorCyan
-const hl_bg = termbox.ColorBlue
+const hl_fg = tcell.Color(termbox.ColorCyan)
+const hl_bg = tcell.Color(termbox.ColorBlue)
 
 //----------------------------------------------------------------------------
 // view tags
@@ -99,8 +99,8 @@ type view_tag struct {
 	beg_offset int
 	end_line   int
 	end_offset int
-	fg         termbox.Attribute
-	bg         termbox.Attribute
+	fg         tcell.Color
+	bg         tcell.Color
 }
 
 func (t *view_tag) includes(line, offset int) bool {
@@ -117,8 +117,8 @@ func (t *view_tag) includes(line, offset int) bool {
 }
 
 var default_view_tag = view_tag{
-	fg: termbox.ColorDefault,
-	bg: termbox.ColorDefault,
+	fg: tcell.ColorDefault,
+	bg: tcell.ColorDefault,
 }
 
 //----------------------------------------------------------------------------
@@ -177,7 +177,7 @@ func new_view(ctx view_context, buf *buffer, g *gemacs) *view {
 	v.g = g
 	v.ctx = ctx
 	// Create a minimal screen buffer - will be resized properly later
-	v.uibuf = NewScreenBuffer(nil) // Pass nil since we're using termbox mode
+	v.uibuf = NewScreenBuffer(GlobalScreen) // Pass GlobalScreen
 	// Start with minimal size - will be resized by layout
 	v.uibuf.Resize(1, 1)
 	v.attach(buf)
@@ -293,8 +293,6 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 	data := line.data
 	y := coff / v.uibuf.Width
 
-	live := v.uibuf.Screen != nil
-
 	if len(v.highlight_bytes) > 0 {
 		v.find_highlight_ranges_for_line(data)
 	}
@@ -309,7 +307,7 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 		}
 
 		if rx >= v.uibuf.Width {
-			st := makeStyle(termbox.ColorDefault, termbox.ColorDefault)
+			st := MakeStyle(tcell.ColorDefault, tcell.ColorDefault)
 			v.uibuf.SetContent(v.uibuf.Width-1, y, '>', nil, st)
 
 			break
@@ -326,14 +324,13 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 				}
 
 				if rx >= 0 {
-					cell := v.make_cell(line_num, bx, ' ')
-					st := makeStyle(termbox.Attribute(cell.Fg), termbox.Attribute(cell.Bg))
-					v.uibuf.SetContent(rx, y, ' ', nil, st)
+					ch, st := v.make_cell(line_num, bx, ' ')
+					v.uibuf.SetContent(rx, y, ch, nil, st)
 				}
 			}
 		case r < 32:
 			// invisible chars like ^R or ^@
-			red := makeStyle(termbox.ColorRed, termbox.ColorDefault)
+			red := MakeStyle(tcell.ColorRed, tcell.ColorDefault)
 			if rx >= 0 {
 				v.uibuf.SetContent(rx, y, '^', nil, red)
 			}
@@ -348,9 +345,8 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 			x++
 		default:
 			if rx >= 0 {
-				cell := v.make_cell(line_num, bx, r)
-				st := makeStyle(termbox.Attribute(cell.Fg), termbox.Attribute(cell.Bg))
-				v.uibuf.SetContent(rx, y, r, nil, st)
+				ch, st := v.make_cell(line_num, bx, r)
+				v.uibuf.SetContent(rx, y, ch, nil, st)
 			}
 			x += rune_width(r)
 		}
@@ -359,7 +355,7 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 	}
 
 	if line_voffset != 0 {
-		st := makeStyle(termbox.ColorDefault, termbox.ColorDefault)
+		st := MakeStyle(tcell.ColorDefault, tcell.ColorDefault)
 		v.uibuf.SetContent(0, y, '<', nil, st)
 	}
 }
@@ -370,7 +366,7 @@ func (v *view) draw_contents() {
 	}
 
 	// clear the buffer
-	clearStyle := MakeStyle(termbox.ColorDefault, termbox.ColorDefault)
+	clearStyle := MakeStyle(tcell.ColorDefault, tcell.ColorDefault)
 	v.uibuf.Fill(v.uibuf.Rect, ' ', clearStyle)
 
 	if v.uibuf.Width == 0 || v.uibuf.Height == 0 {
@@ -404,20 +400,16 @@ func (v *view) draw_status() {
 
 	// fill background with '-'
 	lp := default_label_params
-	lp.Bg = termbox.AttrReverse
-	lp.Fg = termbox.AttrReverse | termbox.AttrBold
-	fillStyle := MakeStyle(termbox.AttrReverse, termbox.AttrReverse)
+	lp.Bg = tcell.ColorWhite
+	lp.Fg = tcell.ColorBlack
+	fillStyle := MakeStyle(tcell.ColorWhite, tcell.ColorWhite)
 	v.uibuf.Fill(Rect{0, v.height(), v.uibuf.Width, 1}, '-', fillStyle)
 
 	// on disk sync status
 	if !v.buf.synced_with_disk() {
-		cell := termbox.Cell{
-			Fg: termbox.AttrReverse,
-			Bg: termbox.AttrReverse,
-			Ch: '*',
-		}
-		v.uibuf.Set(1, v.height(), cell)
-		v.uibuf.Set(2, v.height(), cell)
+		style := MakeStyle(tcell.ColorWhite, tcell.ColorWhite)
+		v.uibuf.SetContent(1, v.height(), '*', nil, style)
+		v.uibuf.SetContent(2, v.height(), '*', nil, style)
 	}
 
 	// filename
@@ -425,7 +417,7 @@ func (v *view) draw_status() {
 	v.uibuf.DrawLabel(Rect{5, v.height(), v.uibuf.Width, 1},
 		&lp, string(v.tmpbuf.Bytes()))
 	namel := v.tmpbuf.Len()
-	lp.Fg = termbox.AttrReverse
+	lp.Fg = tcell.ColorBlack
 	v.tmpbuf.Reset()
 	fmt.Fprintf(&v.tmpbuf, "(%d, %d)  ", v.cursor.line_num, v.cursor_voffset)
 	v.uibuf.DrawLabel(Rect{5 + namel, v.height(), v.uibuf.Width, 1},
@@ -1433,37 +1425,27 @@ func (v *view) tag(line, offset int) *view_tag {
 	return &default_view_tag
 }
 
-func (v *view) make_cell(line, offset int, ch rune) termbox.Cell {
+func (v *view) make_cell(line, offset int, ch rune) (rune, tcell.Style) {
 	tag := v.tag(line, offset)
+	style := tcell.StyleDefault
 	if tag != &default_view_tag {
-		return termbox.Cell{
-			Ch: ch,
-			Fg: tag.fg,
-			Bg: tag.bg,
-		}
+		style = style.Foreground(tag.fg).Background(tag.bg)
 	}
 
-	cell := termbox.Cell{
-		Ch: ch,
-		Fg: tag.fg,
-		Bg: tag.bg,
-	}
-	
 	// Check for syntax highlighting first
 	if v.syntax_theme != nil && v.syntax_language != nil && v.g.syntax_highlighter.IsEnabled() {
 		if tokenType := v.get_token_type_at(line, offset); tokenType != TokenNone {
 			if color, exists := v.syntax_theme.Colors[tokenType]; exists {
-				cell.Fg = color
+				style = style.Foreground(color)
 			}
 		}
 	}
-	
+
 	// Search highlighting takes precedence
 	if v.in_one_of_highlight_ranges(offset) {
-		cell.Fg = hl_fg
-		cell.Bg = hl_bg
+		style = style.Foreground(hl_fg).Background(hl_bg)
 	}
-	return cell
+	return ch, style
 }
 
 // get_token_type_at returns the token type at the given line and offset

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/gdamore/tcell/v2"
 	"github.com/gdamore/tcell/v2/termbox"
 )
 
@@ -25,8 +26,8 @@ func init_region_indent_mode(gemacs *gemacs, dir int) region_indent_mode {
 		beg_offset: beg.boffset,
 		end_line:   end.line_num,
 		end_offset: end.boffset,
-		fg:         termbox.ColorDefault,
-		bg:         termbox.ColorBlue,
+		fg:         tcell.Color(termbox.ColorDefault),
+		bg:         tcell.Color(termbox.ColorBlue),
 	})
 	v.dirty = dirty_everything
 	gemacs.set_status("(Type > or < to indent/deindent respectively)")
@@ -67,7 +68,7 @@ update_tag:
 		beg_offset: beg.boffset,
 		end_line:   end.line_num,
 		end_offset: end.boffset,
-		fg:         termbox.ColorDefault,
-		bg:         termbox.ColorBlue,
+		fg:         tcell.Color(termbox.ColorDefault),
+		bg:         tcell.Color(termbox.ColorBlue),
 	})
 }
