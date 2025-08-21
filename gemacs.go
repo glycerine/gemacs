@@ -9,10 +9,9 @@ import (
 	"strconv"
 	"unicode"
 
-	"github.com/glycerine/tcell_old_hacked_up"
-	"github.com/glycerine/tcell_old_hacked_up/encoding"
-	"github.com/glycerine/tcell_old_hacked_up/termbox"
-	"github.com/glycerine/tulib"
+	"github.com/gdamore/tcell/v2"
+	"github.com/gdamore/tcell/v2/encoding"
+	"github.com/gdamore/tcell/v2/termbox"
 	"github.com/glycerine/verb"
 )
 
@@ -70,7 +69,8 @@ func (k key_event) to_termbox_event() termbox.Event {
 //----------------------------------------------------------------------------
 
 type gemacs struct {
-	uibuf             *tulib.Buffer
+	screen            tcell.Screen
+	uibuf             *ScreenBuffer
 	active            *view_tree // this one is always a leaf node
 	views             *view_tree // a root node
 	buffers           []*buffer
@@ -299,7 +299,7 @@ func (g *gemacs) kill_all_views_but_active() {
 
 // Call it manually only when views layout has changed.
 func (g *gemacs) resize() {
-	g.uibuf = tulib.TermboxBuffer() // jea: only use of TermboxBuffer is here.
+	g.uibuf = TermboxBuffer()
 	views_area := g.uibuf.Rect
 	views_area.Height -= 1 // reserve space for command line
 	g.views.resize(views_area)
@@ -357,8 +357,9 @@ func (g *gemacs) draw_status() {
 	r := g.uibuf.Rect
 	r.Y = r.Height - 1
 	r.Height = 1
-	g.uibuf.Fill(r, termbox.Cell{Fg: lp.Fg, Bg: lp.Bg, Ch: ' '})
-	g.uibuf.DrawLabel(r, &lp, g.statusbuf.Bytes())
+	statusStyle := MakeStyle(lp.Fg, lp.Bg)
+	g.uibuf.Fill(r, ' ', statusStyle)
+	g.uibuf.DrawLabel(r, &lp, string(g.statusbuf.Bytes()))
 }
 
 func (g *gemacs) composite_recursively(v *view_tree) {
@@ -374,11 +375,8 @@ func (g *gemacs) composite_recursively(v *view_tree) {
 		splitter.X -= 1
 		splitter.Width = 1
 		splitter.Height -= 1
-		g.uibuf.Fill(splitter, termbox.Cell{
-			Fg: termbox.AttrReverse,
-			Bg: termbox.AttrReverse,
-			Ch: '|',
-		})
+		splitterStyle := MakeStyle(termbox.AttrReverse, termbox.AttrReverse)
+		g.uibuf.Fill(splitter, '|', splitterStyle)
 	} else {
 		g.composite_recursively(v.top)
 		g.composite_recursively(v.bottom)
@@ -443,7 +441,7 @@ func (g *gemacs) main_loop() {
 	g.termbox_event = make(chan termbox.Event, 20)
 	go func() {
 		for {
-			g.termbox_event <- termbox.PollEventOnScreen(g.uibuf.Screen)
+			g.termbox_event <- PollEvent()
 		}
 	}()
 	for {
@@ -798,12 +796,19 @@ func (g *gemacs) set_tab_size_lemp() line_edit_mode_params {
 func main() {
 	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
 
-	err := termbox.Init()
+	// Create tcell screen directly
+	screen, err := tcell.NewScreen()
 	if err != nil {
 		panic(err)
 	}
-	defer termbox.Close()
-	termbox.SetInputMode(termbox.InputAlt)
+	err = screen.Init()
+	if err != nil {
+		panic(err)
+	}
+	defer screen.Fini()
+	
+	// Set global screen for our compatibility layer
+	SetGlobalScreen(screen)
 
 	gemacs := new_gemacs(os.Args[1:])
 	

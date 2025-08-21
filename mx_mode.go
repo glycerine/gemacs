@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/glycerine/tcell_old_hacked_up/termbox"
+	"github.com/gdamore/tcell/v2/termbox"
 )
 
 // MXCommand represents an M-x command

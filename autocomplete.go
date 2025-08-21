@@ -2,10 +2,7 @@ package main
 
 import (
 	"bytes"
-
-	"github.com/glycerine/tcell_old_hacked_up/termbox"
-
-	"github.com/glycerine/tulib"
+	"github.com/gdamore/tcell/v2/termbox"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -260,14 +257,14 @@ func (ac *autocompl) slider_pos_and_rune(height int) (int, rune) {
 	return progress / 2, r
 }
 
-func (ac *autocompl) draw_onto(buf *tulib.Buffer, x, y int) {
+func (ac *autocompl) draw_onto(buf *ScreenBuffer, x, y int) {
 	ac.validate_cursor()
 
 	h := ac.desired_height()
-	dst := find_place_for_rect(buf.Rect, tulib.Rect{x, y + 1, 1, h})
+	dst := find_place_for_rect(buf.Rect, Rect{x, y + 1, 1, h})
 	ac.adjust_view(dst.Height)
 	w := ac.desired_width(dst.Height)
-	dst = find_place_for_rect(buf.Rect, tulib.Rect{x, y + 1, w, h})
+	dst = find_place_for_rect(buf.Rect, Rect{x, y + 1, w, h})
 
 	slider_i, slider_r := ac.slider_pos_and_rune(dst.Height)
 	lp := default_label_params
@@ -284,22 +281,16 @@ func (ac *autocompl) draw_onto(buf *tulib.Buffer, x, y int) {
 			lp.Fg = termbox.ColorWhite
 			lp.Bg = termbox.ColorBlue
 		}
-		buf.Fill(r, termbox.Cell{
-			Fg: lp.Fg,
-			Bg: lp.Bg,
-			Ch: ' ',
-		})
-		buf.DrawLabel(r, &lp, ac.actual_proposals()[n].display)
+		cellStyle := MakeStyle(termbox.Attribute(lp.Fg), termbox.Attribute(lp.Bg))
+		buf.Fill(r, ' ', cellStyle)
+		buf.DrawLabel(r, &lp, string(ac.actual_proposals()[n].display))
 
 		sr := ' '
 		if i == slider_i {
 			sr = slider_r
 		}
-		buf.Set(r.X+r.Width, r.Y, termbox.Cell{
-			Fg: termbox.ColorWhite,
-			Bg: termbox.ColorBlue,
-			Ch: sr,
-		})
+		sliderStyle := MakeStyle(termbox.ColorWhite, termbox.ColorBlue)
+		buf.SetContent(r.X+r.Width, r.Y, sr, nil, sliderStyle)
 		r.Y++
 	}
 }

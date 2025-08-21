@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/glycerine/tcell_old_hacked_up/termbox"
+	"github.com/gdamore/tcell/v2/termbox"
 )
 
 type key_press_mode struct {

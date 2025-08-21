@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	"github.com/glycerine/tcell_old_hacked_up/termbox"
+	"github.com/gdamore/tcell/v2/termbox"
 )
 
 func TestMXModeInitialCharacter(t *testing.T) {

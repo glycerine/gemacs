@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"github.com/glycerine/tulib"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -46,8 +45,8 @@ var invisible_rune_table = []rune{
 	'_',  // 31
 }
 
-func make_godit_default_label_params() tulib.LabelParams {
-	lp := tulib.DefaultLabelParams
+func make_godit_default_label_params() LabelParams {
+	lp := DefaultLabelParams
 	lp.Ellipsis = '~'
 	return lp
 }
@@ -255,8 +254,8 @@ func is_space(b byte) bool {
 	return b == ' ' || b == '\t' || b == '\n'
 }
 
-func find_place_for_rect(win, pref tulib.Rect) tulib.Rect {
-	var vars [4]tulib.Rect
+func find_place_for_rect(win, pref Rect) Rect {
+	var vars [4]Rect
 
 	vars[0] = pref.Intersection(win)
 	if vars[0] == pref {

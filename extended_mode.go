@@ -1,8 +1,7 @@
 package main
 
 import (
-	"github.com/glycerine/tcell_old_hacked_up/termbox"
-	"github.com/glycerine/tulib"
+	"github.com/gdamore/tcell/v2/termbox"
 	"strconv"
 )
 
@@ -193,6 +192,6 @@ func (e extended_mode) on_key(ev *termbox.Event) {
 	g.set_overlay_mode(nil)
 	return
 undefined:
-	g.set_status("C-x %s is undefined", tulib.KeyToString(ev.Key, ev.Ch, ev.Mod))
+	g.set_status("C-x %s is undefined", KeyToString(ev.Key, ev.Ch, ev.Mod))
 	g.set_overlay_mode(nil)
 }

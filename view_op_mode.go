@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/glycerine/tcell_old_hacked_up/termbox"
+	"github.com/gdamore/tcell/v2/termbox"
 )
 
 //----------------------------------------------------------------------------
@@ -28,14 +28,11 @@ func (v view_op_mode) draw() {
 	r := g.uibuf.Rect
 	r.Y = r.Height - 1
 	r.Height = 1
-	g.uibuf.Fill(r, termbox.Cell{
-		Fg: termbox.ColorDefault,
-		Bg: termbox.ColorDefault,
-		Ch: ' ',
-	})
+	fillStyle := MakeStyle(termbox.ColorDefault, termbox.ColorDefault)
+	g.uibuf.Fill(r, ' ', fillStyle)
 	lp := default_label_params
 	lp.Fg = termbox.ColorYellow
-	g.uibuf.DrawLabel(r, &lp, view_op_mode_name)
+	g.uibuf.DrawLabel(r, &lp, string(view_op_mode_name))
 
 	// draw views names
 	name := 0
@@ -52,11 +49,8 @@ func (v view_op_mode) draw() {
 		r.Height = 1
 		x := r.X + 1
 		y := r.Y
-		g.uibuf.Fill(r, termbox.Cell{
-			Fg: termbox.ColorDefault,
-			Bg: bg,
-			Ch: ' ',
-		})
+		bgStyle := MakeStyle(termbox.ColorDefault, bg)
+		g.uibuf.Fill(r, ' ', bgStyle)
 		g.uibuf.Set(x, y, termbox.Cell{
 			Fg: termbox.ColorWhite | termbox.AttrBold,
 			Bg: bg,
@@ -74,11 +68,8 @@ func (v view_op_mode) draw() {
 	hr.X += (r.Width - 1) / 2
 	hr.Width = 1
 	hr.Height = 3
-	g.uibuf.Fill(hr, termbox.Cell{
-		Fg: termbox.ColorWhite,
-		Bg: termbox.ColorRed,
-		Ch: '|',
-	})
+	hrStyle := MakeStyle(termbox.ColorWhite, termbox.ColorRed)
+	g.uibuf.Fill(hr, '|', hrStyle)
 
 	x = hr.X
 	y = hr.Y + 1
@@ -93,11 +84,8 @@ func (v view_op_mode) draw() {
 	vr.Y += (r.Height - 1) / 2
 	vr.Height = 1
 	vr.Width = 5
-	g.uibuf.Fill(vr, termbox.Cell{
-		Fg: termbox.ColorWhite,
-		Bg: termbox.ColorRed,
-		Ch: '-',
-	})
+	vrStyle := MakeStyle(termbox.ColorWhite, termbox.ColorRed)
+	g.uibuf.Fill(vr, '-', vrStyle)
 
 	x = vr.X + 2
 	y = vr.Y

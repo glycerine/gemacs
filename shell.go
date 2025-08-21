@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/glycerine/tcell_old_hacked_up/termbox"
+	"github.com/gdamore/tcell/v2/termbox"
 )
 
 // ShellBuffer represents a shell buffer with process management

@@ -3,12 +3,28 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/glycerine/tcell_old_hacked_up/termbox"
-	"github.com/glycerine/tulib"
+	"github.com/gdamore/tcell/v2"
+	"github.com/gdamore/tcell/v2/termbox"
 	"os"
 	"strings"
 	"unicode/utf8"
 )
+
+//----------------------------------------------------------------------------
+// Helper functions for tcell compatibility
+//----------------------------------------------------------------------------
+
+// makeStyle creates a tcell Style from termbox attributes
+func makeStyle(fg, bg termbox.Attribute) tcell.Style {
+	style := tcell.StyleDefault
+	if fg != termbox.ColorDefault {
+		style = style.Foreground(tcell.PaletteColor(int(fg) - 1))
+	}
+	if bg != termbox.ColorDefault {
+		style = style.Background(tcell.PaletteColor(int(bg) - 1))
+	}
+	return style
+}
 
 //----------------------------------------------------------------------------
 // dirty flag
@@ -138,7 +154,7 @@ type view struct {
 	ctx              view_context
 	tmpbuf           bytes.Buffer // temporary buffer for status bar text
 	buf              *buffer      // currently displayed buffer
-	uibuf            *tulib.Buffer
+	uibuf            *ScreenBuffer
 	dirty            dirty_flag
 	oneline          bool
 	ac               *autocompl
@@ -160,7 +176,12 @@ func new_view(ctx view_context, buf *buffer, g *gemacs) *view {
 	v := new(view)
 	v.g = g
 	v.ctx = ctx
-	v.uibuf = tulib.NewBuffer(1, 1) // the only place NewBuffer is called.
+	// Create a minimal screen buffer - will be resized properly later
+	screen := GetGlobalScreen()
+	if screen == nil {
+		panic("Global screen not initialized")
+	}
+	v.uibuf = NewScreenBuffer(screen)
 	v.attach(buf)
 	v.ac_decide = default_ac_decide
 	v.highlight_ranges = make([]byte_range, 0, 10)
@@ -289,16 +310,9 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 		}
 
 		if rx >= v.uibuf.Width {
-			last := coff + v.uibuf.Width - 1
-
-			v.uibuf.Cells[last] = termbox.Cell{
-				Ch: '>',
-				Fg: termbox.ColorDefault,
-				Bg: termbox.ColorDefault,
-			}
 			if live {
-				st := termbox.MakeStyle(termbox.ColorDefault, termbox.ColorDefault)
-				v.uibuf.Screen.SetContent(v.uibuf.Width-1, y, '>', nil, st)
+				st := makeStyle(termbox.ColorDefault, termbox.ColorDefault)
+				v.uibuf.SetContent(v.uibuf.Width-1, y, '>', nil, st)
 			}
 
 			break
@@ -314,53 +328,32 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 					break
 				}
 
-				if rx >= 0 {
+				if rx >= 0 && live {
 					cell := v.make_cell(line_num, bx, ' ')
-					v.uibuf.Cells[coff+rx] = cell
-					if live {
-						st := termbox.MakeStyle(cell.Fg, cell.Bg)
-						v.uibuf.Screen.SetContent(rx, y, ' ', nil, st)
-					}
+					st := makeStyle(termbox.Attribute(cell.Fg), termbox.Attribute(cell.Bg))
+					v.uibuf.SetContent(rx, y, ' ', nil, st)
 				}
 			}
 		case r < 32:
 			// invisible chars like ^R or ^@
-			red := termbox.MakeStyle(termbox.ColorRed, termbox.ColorDefault)
-			if rx >= 0 {
-				v.uibuf.Cells[coff+rx] = termbox.Cell{
-					Ch: '^',
-					Fg: termbox.ColorRed,
-					Bg: termbox.ColorDefault,
-				}
-				if live {
-					v.uibuf.Screen.SetContent(rx, y, '^', nil, red)
-				}
+			red := makeStyle(termbox.ColorRed, termbox.ColorDefault)
+			if rx >= 0 && live {
+				v.uibuf.SetContent(rx, y, '^', nil, red)
 			}
 			x++
 			rx = x - line_voffset
 			if rx >= v.uibuf.Width {
 				break
 			}
-			if rx >= 0 {
-				v.uibuf.Cells[coff+rx] = termbox.Cell{
-					Ch: invisible_rune_table[r],
-					Fg: termbox.ColorRed,
-					Bg: termbox.ColorDefault,
-				}
-				if live {
-					v.uibuf.Screen.SetContent(rx, y, invisible_rune_table[r], nil, red)
-				}
+			if rx >= 0 && live {
+				v.uibuf.SetContent(rx, y, invisible_rune_table[r], nil, red)
 			}
 			x++
 		default:
-			if rx >= 0 {
+			if rx >= 0 && live {
 				cell := v.make_cell(line_num, bx, r)
-				v.uibuf.Cells[coff+rx] = v.make_cell(
-					line_num, bx, r)
-				if live {
-					st := termbox.MakeStyle(cell.Fg, cell.Bg)
-					v.uibuf.Screen.SetContent(rx, y, r, nil, st)
-				}
+				st := makeStyle(termbox.Attribute(cell.Fg), termbox.Attribute(cell.Bg))
+				v.uibuf.SetContent(rx, y, r, nil, st)
 			}
 			x += rune_width(r)
 		}
@@ -368,16 +361,9 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 		bx += rlen
 	}
 
-	if line_voffset != 0 {
-		v.uibuf.Cells[coff] = termbox.Cell{
-			Ch: '<',
-			Fg: termbox.ColorDefault,
-			Bg: termbox.ColorDefault,
-		}
-		if live {
-			st := termbox.MakeStyle(termbox.ColorDefault, termbox.ColorDefault)
-			v.uibuf.Screen.SetContent(0, y, '<', nil, st)
-		}
+	if line_voffset != 0 && live {
+		st := makeStyle(termbox.ColorDefault, termbox.ColorDefault)
+		v.uibuf.SetContent(0, y, '<', nil, st)
 	}
 }
 
@@ -387,11 +373,8 @@ func (v *view) draw_contents() {
 	}
 
 	// clear the buffer
-	v.uibuf.Fill(v.uibuf.Rect, termbox.Cell{
-		Ch: ' ',
-		Fg: termbox.ColorDefault,
-		Bg: termbox.ColorDefault,
-	})
+	clearStyle := MakeStyle(termbox.ColorDefault, termbox.ColorDefault)
+	v.uibuf.Fill(v.uibuf.Rect, ' ', clearStyle)
 
 	if v.uibuf.Width == 0 || v.uibuf.Height == 0 {
 		return
@@ -426,11 +409,8 @@ func (v *view) draw_status() {
 	lp := default_label_params
 	lp.Bg = termbox.AttrReverse
 	lp.Fg = termbox.AttrReverse | termbox.AttrBold
-	v.uibuf.Fill(tulib.Rect{0, v.height(), v.uibuf.Width, 1}, termbox.Cell{
-		Fg: termbox.AttrReverse,
-		Bg: termbox.AttrReverse,
-		Ch: '-',
-	})
+	fillStyle := MakeStyle(termbox.AttrReverse, termbox.AttrReverse)
+	v.uibuf.Fill(Rect{0, v.height(), v.uibuf.Width, 1}, '-', fillStyle)
 
 	// on disk sync status
 	if !v.buf.synced_with_disk() {
@@ -445,14 +425,14 @@ func (v *view) draw_status() {
 
 	// filename
 	fmt.Fprintf(&v.tmpbuf, "  %s  ", v.buf.name)
-	v.uibuf.DrawLabel(tulib.Rect{5, v.height(), v.uibuf.Width, 1},
-		&lp, v.tmpbuf.Bytes())
+	v.uibuf.DrawLabel(Rect{5, v.height(), v.uibuf.Width, 1},
+		&lp, string(v.tmpbuf.Bytes()))
 	namel := v.tmpbuf.Len()
 	lp.Fg = termbox.AttrReverse
 	v.tmpbuf.Reset()
 	fmt.Fprintf(&v.tmpbuf, "(%d, %d)  ", v.cursor.line_num, v.cursor_voffset)
-	v.uibuf.DrawLabel(tulib.Rect{5 + namel, v.height(), v.uibuf.Width, 1},
-		&lp, v.tmpbuf.Bytes())
+	v.uibuf.DrawLabel(Rect{5 + namel, v.height(), v.uibuf.Width, 1},
+		&lp, string(v.tmpbuf.Bytes()))
 	v.tmpbuf.Reset()
 }
 

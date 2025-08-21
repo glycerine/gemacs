@@ -93,6 +93,7 @@ func TestShellBuffer(t *testing.T) {
 }
 
 func TestMXCommands(t *testing.T) {
+	InitTestScreen()
 	g := new_gemacs([]string{})
 	
 	// Test M-x mode creation
@@ -163,6 +164,7 @@ func TestShellBufferIdentification(t *testing.T) {
 }
 
 func TestMXAutoCompletion(t *testing.T) {
+	InitTestScreen()
 	g := new_gemacs([]string{})
 	mx := init_mx_mode(g)
 	

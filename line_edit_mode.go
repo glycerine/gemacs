@@ -1,8 +1,7 @@
 package main
 
 import (
-	"github.com/glycerine/tcell_old_hacked_up/termbox"
-	"github.com/glycerine/tulib"
+	"github.com/gdamore/tcell/v2/termbox"
 	"strings"
 	"unicode/utf8"
 )
@@ -83,23 +82,20 @@ func (l *line_edit_mode) draw() {
 	view := l.lineview
 
 	// update label
-	prompt_r := tulib.Rect{
+	prompt_r := Rect{
 		0, ui.Height - 1,
 		l.prompt_w + 1, 1,
 	}
-	ui.Fill(prompt_r, termbox.Cell{
-		Fg: termbox.ColorDefault,
-		Bg: termbox.ColorDefault,
-		Ch: ' ',
-	})
+	promptStyle := MakeStyle(termbox.ColorDefault, termbox.ColorDefault)
+	ui.Fill(prompt_r, ' ', promptStyle)
 	lp := default_label_params
 	lp.Fg = termbox.ColorCyan
-	ui.DrawLabel(prompt_r, &lp, l.prompt)
+	ui.DrawLabel(prompt_r, &lp, string(l.prompt))
 
 	// update line view
 	view.resize(ui.Width-l.prompt_w-1, 1)
 	view.draw()
-	line_r := tulib.Rect{
+	line_r := Rect{
 		l.prompt_w + 1, ui.Height - 1,
 		view.uibuf.Width, view.uibuf.Height,
 	}

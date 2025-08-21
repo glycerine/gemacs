@@ -35,6 +35,7 @@ func TestTabSize(t *testing.T) {
 
 func TestGemacsTabSizeDefault(t *testing.T) {
 	// Test that new gemacs instance has correct default tab size
+	InitTestScreen()
 	g := new_gemacs([]string{})
 	if g.tabstop_length != default_tabstop_length {
 		t.Errorf("Expected default tab size %d, got %d", default_tabstop_length, g.tabstop_length)
