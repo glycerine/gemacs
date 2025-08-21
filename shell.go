@@ -102,7 +102,10 @@ func getShellArgs(shellCmd string) []string {
 	switch shellName {
 	case "bash":
 		// Interactive mode with job control disabled to prevent warnings
-		return []string{"-i", "+m"}
+		// +m disables job control monitoring
+		// --norc prevents reading ~/.bashrc which might interfere
+		// --noprofile prevents reading profile files
+		return []string{"-i", "+m", "--norc", "--noprofile"}
 	case "zsh":
 		// Interactive mode, zsh handles job control better
 		return []string{"-i"}
@@ -177,8 +180,7 @@ func (shell *ShellBuffer) startShell() error {
 	go shell.readOutput()
 	go shell.readErrors()
 	
-	// Add initial prompt
-	shell.addLine(fmt.Sprintf("Shell started: %s", shellCmd))
+	// Add initial empty line for shell output
 	shell.addLine("")
 	
 	return nil
@@ -200,6 +202,12 @@ func (shell *ShellBuffer) readErrors() {
 	scanner := bufio.NewScanner(shell.stderr)
 	for scanner.Scan() {
 		line := scanner.Text()
+		
+		// Filter out known harmless bash warnings
+		if strings.Contains(line, "no job control in this shell") {
+			continue // Skip this harmless warning
+		}
+		
 		shell.mutex.Lock()
 		shell.addLine("ERROR: " + line)
 		shell.mutex.Unlock()
