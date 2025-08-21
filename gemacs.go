@@ -11,9 +11,10 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/gdamore/tcell/v2/encoding"
-	"github.com/gdamore/tcell/v2/termbox"
 	"github.com/glycerine/verb"
 )
+
+
 
 var pp = verb.PP
 
@@ -43,26 +44,16 @@ const (
 
 // this is a structure which represents a key press, used for keyboard macros
 type key_event struct {
-	mod termbox.Modifier
-	_   [1]byte
-	key termbox.Key
+	mod tcell.ModMask
+	key tcell.Key
 	ch  rune
 }
 
-func create_key_event(ev *termbox.Event) key_event {
+func create_key_event(ev *tcell.EventKey) key_event {
 	return key_event{
-		mod: ev.Mod,
-		key: ev.Key,
-		ch:  ev.Ch,
-	}
-}
-
-func (k key_event) to_termbox_event() termbox.Event {
-	return termbox.Event{
-		Type: termbox.EventKey,
-		Mod:  k.mod,
-		Key:  k.key,
-		Ch:   k.ch,
+		mod: ev.Modifiers(),
+		key: ev.Key(),
+		ch:  ev.Rune(),
 	}
 }
 
@@ -83,7 +74,7 @@ type gemacs struct {
 	statusbuf         bytes.Buffer
 	quitflag          bool
 	overlay           overlay_mode
-	termbox_event     chan termbox.Event
+	termbox_event     chan tcell.Event
 	keymacros         []key_event
 	recording         bool
 	killbuffer        []byte
@@ -95,8 +86,9 @@ type gemacs struct {
 	shell_manager     *ShellManager // Shell management
 }
 
-func new_gemacs(filenames []string) *gemacs {
+func new_gemacs(filenames []string, screen tcell.Screen) *gemacs {
 	g := new(gemacs)
+	g.screen = screen
 	g.buffers = make([]*buffer, 0, 20)
 	g.syntax_highlighter = NewSyntaxHighlighter()
 	g.tabstop_length = default_tabstop_length
@@ -304,7 +296,7 @@ func (g *gemacs) kill_all_views_but_active() {
 
 // Call it manually only when views layout has changed.
 func (g *gemacs) resize() {
-	g.uibuf = TermboxBuffer()
+	
 	views_area := g.uibuf.Rect
 	views_area.Height -= 1 // reserve space for command line
 	g.views.resize(views_area)
@@ -354,14 +346,14 @@ func (g *gemacs) draw() {
 	} else {
 		cx, cy = g.cursor_position()
 	}
-	GetGlobalScreen().ShowCursor(cx, cy)
+	g.screen.ShowCursor(cx, cy)
 }
 
 func (g *gemacs) draw_status() {
 	r := g.uibuf.Rect
 	r.Y = r.Height - 1
 	r.Height = 1
-	statusStyle := MakeStyle(default_label_params.Fg, default_label_params.Bg)
+	statusStyle := tcell.StyleDefault.Foreground(default_label_params.Fg).Background(default_label_params.Bg)
 	g.uibuf.Fill(r, ' ', statusStyle)
 	g.uibuf.DrawLabel(r, &default_label_params, string(g.statusbuf.Bytes()))
 }
@@ -379,7 +371,7 @@ func (g *gemacs) composite_recursively(v *view_tree) {
 		splitter.X -= 1
 		splitter.Width = 1
 		splitter.Height -= 1
-		splitterStyle := MakeStyle(tcell.ColorWhite, tcell.ColorWhite)
+		splitterStyle := tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorWhite)
 		g.uibuf.Fill(splitter, '|', splitterStyle)
 	} else {
 		g.composite_recursively(v.top)
@@ -392,21 +384,21 @@ func (g *gemacs) cursor_position() (int, int) {
 	return g.active.X + x, g.active.Y + y
 }
 
-func (g *gemacs) on_sys_key(ev *termbox.Event) {
-	switch ev.Key {
-	case termbox.KeyCtrlG:
+func (g *gemacs) on_sys_key(ev *tcell.EventKey) {
+	switch ev.Key() {
+	case tcell.KeyCtrlG:
 		v := g.active.leaf
 		v.ac = nil
 		g.set_overlay_mode(nil)
 		g.set_status("Quit")
-	case termbox.KeyCtrlZ:
+	case tcell.KeyCtrlZ:
 		suspend(g)
 	}
 }
 
-func (g *gemacs) on_alt_key(ev *termbox.Event) bool {
+func (g *gemacs) on_alt_key(ev *tcell.EventKey) bool {
 	//pp("on_alt_key() called, ev = '%#v'", ev)
-	switch ev.Ch {
+	switch ev.Rune() {
 	case 'g':
 		g.set_overlay_mode(init_line_edit_mode(g, g.goto_line_lemp()))
 		return true
@@ -423,18 +415,18 @@ func (g *gemacs) on_alt_key(ev *termbox.Event) bool {
 	return false
 }
 
-func (g *gemacs) on_key(ev *termbox.Event) {
+func (g *gemacs) on_key(ev *tcell.EventKey) {
 	//pp("top level gemacs.on_key: Ch='%v', ev='%#v'", string(ev.Ch), ev)
 	v := g.active.leaf
-	switch ev.Key {
-	case termbox.KeyCtrlX:
+	switch ev.Key() {
+	case tcell.KeyCtrlX:
 		g.set_overlay_mode(init_extended_mode(g))
-	case termbox.KeyCtrlS:
+	case tcell.KeyCtrlS:
 		g.set_overlay_mode(init_isearch_mode(g, false))
-	case termbox.KeyCtrlR:
+	case tcell.KeyCtrlR:
 		g.set_overlay_mode(init_isearch_mode(g, true))
 	default:
-		if ev.Mod&termbox.ModAlt != 0 && g.on_alt_key(ev) {
+		if ev.Modifiers()&tcell.ModAlt != 0 && g.on_alt_key(ev) {
 			break
 		}
 		v.on_key(ev) // space, 1st time. and 2nd time.
@@ -442,10 +434,10 @@ func (g *gemacs) on_key(ev *termbox.Event) {
 }
 
 func (g *gemacs) main_loop() {
-	g.termbox_event = make(chan termbox.Event, 20)
+	g.termbox_event = make(chan tcell.Event, 20)
 	go func() {
 		for {
-			g.termbox_event <- PollEvent()
+			g.termbox_event <- g.screen.PollEvent()
 		}
 	}()
 	for {
@@ -477,9 +469,9 @@ func (g *gemacs) consume_more_events() bool {
 	panic("unreachable")
 }
 
-func (g *gemacs) handle_event(ev *termbox.Event) bool {
-	switch ev.Type {
-	case termbox.EventKey:
+func (g *gemacs) handle_event(ev tcell.Event) bool {
+	switch ev := ev.(type) {
+	case *tcell.EventKey:
 		//pp("gemacs.handle_event, ev='%#v'", ev)
 		if g.recording {
 			g.keymacros = append(g.keymacros, create_key_event(ev))
@@ -496,14 +488,14 @@ func (g *gemacs) handle_event(ev *termbox.Event) bool {
 		if g.quitflag {
 			return false
 		}
-	case termbox.EventResize:
-		GetGlobalScreen().Clear()
+	case *tcell.EventResize:
+		g.screen.Clear()
 		g.resize()
 		if g.overlay != nil {
-			g.overlay.on_resize(ev)
+			//g.overlay.on_resize(ev)
 		}
-	case termbox.EventError:
-		panic(ev.Err)
+	case *tcell.EventError:
+		panic(ev.Error())
 	}
 
 	// just dump the current view location from the view to the buffer
@@ -744,8 +736,8 @@ func (g *gemacs) stop_recording() {
 
 func (g *gemacs) replay_macro() {
 	for _, keyev := range g.keymacros {
-		ev := keyev.to_termbox_event()
-		g.handle_event(&ev)
+		ev := tcell.NewEventKey(keyev.key, keyev.ch, keyev.mod)
+		g.handle_event(ev)
 	}
 }
 
@@ -813,10 +805,9 @@ func main() {
 		fmt.Fprintf(os.Stderr, "failed to initialize screen: %v", err)
 		os.Exit(1)
 	}
-	GlobalScreen = screen
-	defer GlobalScreen.Fini()
+	defer screen.Fini()
 
-	gemacs := new_gemacs(os.Args[1:])
+	gemacs := new_gemacs(os.Args[1:], screen)
 
 	// Cleanup shells on exit
 	defer func() {
@@ -827,6 +818,6 @@ func main() {
 
 	gemacs.resize()
 	gemacs.draw()
-	GlobalScreen.Show()
+	screen.Show()
 	gemacs.main_loop()
 }
