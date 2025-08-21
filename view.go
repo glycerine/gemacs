@@ -1241,9 +1241,52 @@ func (v *view) on_vcommand(cmd vcommand, arg rune) {
 	v.last_vcommand = cmd
 }
 
+// handleShellKey handles key events for shell buffers
+func (v *view) handleShellKey(ev *termbox.Event) {
+	shell := v.g.shell_manager.GetShell(v.buf.name)
+	if shell == nil {
+		// Not a managed shell buffer, handle normally
+		return
+	}
+	
+	switch ev.Key {
+	case termbox.KeyEnter:
+		// Enter shell mode for command input
+		shellMode := InitShellMode(v.g, shell)
+		v.g.set_overlay_mode(shellMode)
+		
+	default:
+		// For other keys, handle normally (navigation, etc.)
+		// but in read-only mode for shell output
+		switch ev.Key {
+		case termbox.KeyCtrlF, termbox.KeyArrowRight:
+			v.on_vcommand(vcommand_move_cursor_forward, 0)
+		case termbox.KeyCtrlB, termbox.KeyArrowLeft:
+			v.on_vcommand(vcommand_move_cursor_backward, 0)
+		case termbox.KeyCtrlN, termbox.KeyArrowDown:
+			v.on_vcommand(vcommand_move_cursor_next_line, 0)
+		case termbox.KeyCtrlP, termbox.KeyArrowUp:
+			v.on_vcommand(vcommand_move_cursor_prev_line, 0)
+		case termbox.KeyCtrlV, termbox.KeyPgdn:
+			v.on_vcommand(vcommand_move_view_half_forward, 0)
+		case termbox.KeyCtrlE, termbox.KeyEnd:
+			v.on_vcommand(vcommand_move_cursor_end_of_line, 0)
+		case termbox.KeyCtrlA, termbox.KeyHome:
+			v.on_vcommand(vcommand_move_cursor_beginning_of_line, 0)
+		}
+	}
+}
+
 func (v *view) on_key(ev *termbox.Event) {
 	//pp("view on_key called, Ch='%v', ev.Key = '%#v', termbox.ModAlt=%v", string(ev.Ch), ev, termbox.ModAlt)
 	//defer pp("view.on_key done.")
+	
+	// Handle shell buffers specially
+	if IsShellBuffer(v.buf) {
+		v.handleShellKey(ev)
+		return
+	}
+	
 	switch ev.Key {
 	case termbox.KeyCtrlF, termbox.KeyArrowRight:
 		v.on_vcommand(vcommand_move_cursor_forward, 0)

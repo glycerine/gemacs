@@ -87,6 +87,7 @@ type gemacs struct {
 	s_and_r_last_repl []byte
 	syntax_highlighter *SyntaxHighlighter
 	tabstop_length    int // Configurable tab stop length
+	shell_manager     *ShellManager // Shell management
 }
 
 func new_gemacs(filenames []string) *gemacs {
@@ -94,6 +95,7 @@ func new_gemacs(filenames []string) *gemacs {
 	g.buffers = make([]*buffer, 0, 20)
 	g.syntax_highlighter = NewSyntaxHighlighter()
 	g.tabstop_length = default_tabstop_length
+	g.shell_manager = NewShellManager()
 	
 	for _, filename := range filenames {
 		g.new_buffer_from_file(filename)
@@ -411,6 +413,9 @@ func (g *gemacs) on_alt_key(ev *termbox.Event) bool {
 		return true
 	case 'q':
 		g.set_overlay_mode(init_fill_region_mode(g))
+		return true
+	case 'x':
+		g.set_overlay_mode(init_mx_mode(g))
 		return true
 	}
 	return false
@@ -801,6 +806,14 @@ func main() {
 	termbox.SetInputMode(termbox.InputAlt)
 
 	gemacs := new_gemacs(os.Args[1:])
+	
+	// Cleanup shells on exit
+	defer func() {
+		for name := range gemacs.shell_manager.shells {
+			gemacs.shell_manager.CloseShell(name)
+		}
+	}()
+	
 	gemacs.resize()
 	gemacs.draw()
 	termbox.SetCursor(gemacs.cursor_position())
