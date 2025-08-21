@@ -181,6 +181,10 @@ func (e extended_mode) on_key(ev *termbox.Event) {
 			} else {
 				g.set_status("Syntax highlighter not available")
 			}
+		case 't':
+			// Set tab size
+			g.set_overlay_mode(init_line_edit_mode(g, g.set_tab_size_lemp()))
+			return
 		default:
 			goto undefined
 		}

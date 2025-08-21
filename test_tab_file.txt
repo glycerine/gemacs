@@ -1,0 +1,10 @@
+This is a test file with tabs:
+	Tab 1 (should be 4 spaces now)
+		Tab 2 (should be 8 spaces now)
+			Tab 3 (should be 12 spaces now)
+
+function example() {
+	if (condition) {
+		console.log("This shows tab indentation");
+	}
+}

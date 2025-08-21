@@ -72,7 +72,7 @@ func rune_width(r rune) int {
 	return 1
 }
 
-func rune_advance_len(r rune, pos int) int {
+func rune_advance_len(r rune, pos int, tabstop_length int) int {
 	switch {
 	case r == '\t':
 		return tabstop_length - pos%tabstop_length
@@ -83,12 +83,12 @@ func rune_advance_len(r rune, pos int) int {
 	return rune_width(r)
 }
 
-func vlen(data []byte, pos int) int {
+func vlen(data []byte, pos int, tabstop_length int) int {
 	origin := pos
 	for len(data) > 0 {
 		r, rlen := utf8.DecodeRune(data)
 		data = data[rlen:]
-		pos += rune_advance_len(r, pos)
+		pos += rune_advance_len(r, pos, tabstop_length)
 	}
 	return pos - origin
 }

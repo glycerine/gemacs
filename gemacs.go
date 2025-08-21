@@ -32,7 +32,7 @@ func init() {
 }
 
 const (
-	tabstop_length            = 8
+	default_tabstop_length    = 4  // Changed default from 8 to 4
 	view_vertical_threshold   = 5
 	view_horizontal_threshold = 10
 )
@@ -86,12 +86,14 @@ type gemacs struct {
 	s_and_r_last_word []byte
 	s_and_r_last_repl []byte
 	syntax_highlighter *SyntaxHighlighter
+	tabstop_length    int // Configurable tab stop length
 }
 
 func new_gemacs(filenames []string) *gemacs {
 	g := new(gemacs)
 	g.buffers = make([]*buffer, 0, 20)
 	g.syntax_highlighter = NewSyntaxHighlighter()
+	g.tabstop_length = default_tabstop_length
 	
 	for _, filename := range filenames {
 		g.new_buffer_from_file(filename)
@@ -757,6 +759,35 @@ func (g *gemacs) has_unsaved_buffers() bool {
 		}
 	}
 	return false
+}
+
+// "lemp" stands for "line edit mode params"
+func (g *gemacs) set_tab_size_lemp() line_edit_mode_params {
+	return line_edit_mode_params{
+		prompt:          "Set tab size:",
+		initial_content: strconv.Itoa(g.tabstop_length),
+
+		on_apply: func(buf *buffer) {
+			sizestr := string(buf.contents())
+			size, err := strconv.Atoi(sizestr)
+			if err != nil {
+				g.set_status("Invalid tab size: %s", sizestr)
+				return
+			}
+			if size < 1 || size > 32 {
+				g.set_status("Tab size must be between 1 and 32")
+				return
+			}
+			g.tabstop_length = size
+			g.set_status("Tab size set to %d", size)
+			// Refresh all views to apply new tab size
+			g.views.traverse(func(vt *view_tree) {
+				if vt.leaf != nil {
+					vt.leaf.dirty = dirty_everything
+				}
+			})
+		},
+	}
 }
 
 func main() {

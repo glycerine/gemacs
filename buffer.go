@@ -20,13 +20,13 @@ type line struct {
 }
 
 // Find a set of closest offsets for a given visual offset
-func (l *line) find_closest_offsets(voffset int) (bo, co, vo int) {
+func (l *line) find_closest_offsets(voffset int, tabstop_length int) (bo, co, vo int) {
 	data := l.data
 	for len(data) > 0 {
 		var vodif int
 		r, rlen := utf8.DecodeRune(data)
 		data = data[rlen:]
-		vodif = rune_advance_len(r, vo)
+		vodif = rune_advance_len(r, vo, tabstop_length)
 		if vo+vodif > voffset {
 			return
 		}

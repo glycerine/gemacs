@@ -63,24 +63,24 @@ func (a cursor_location) distance(b cursor_location) int {
 }
 
 // Find a visual and a character offset for a given cursor
-func (c *cursor_location) voffset_coffset() (vo, co int) {
+func (c *cursor_location) voffset_coffset(tabstop_length int) (vo, co int) {
 	data := c.line.data[:c.boffset]
 	for len(data) > 0 {
 		r, rlen := utf8.DecodeRune(data)
 		data = data[rlen:]
 		co += 1
-		vo += rune_advance_len(r, vo)
+		vo += rune_advance_len(r, vo, tabstop_length)
 	}
 	return
 }
 
 // Find a visual offset for a given cursor
-func (c *cursor_location) voffset() (vo int) {
+func (c *cursor_location) voffset(tabstop_length int) (vo int) {
 	data := c.line.data[:c.boffset]
 	for len(data) > 0 {
 		r, rlen := utf8.DecodeRune(data)
 		data = data[rlen:]
-		vo += rune_advance_len(r, vo)
+		vo += rune_advance_len(r, vo, tabstop_length)
 	}
 	return
 }

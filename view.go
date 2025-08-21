@@ -285,7 +285,7 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 		}
 
 		if x == tabstop {
-			tabstop += tabstop_length
+			tabstop += v.g.tabstop_length
 		}
 
 		if rx >= v.uibuf.Width {
@@ -541,7 +541,7 @@ func (v *view) adjust_cursor_line() {
 
 	if cursor != v.cursor.line {
 		cursor = v.cursor.line
-		bo, co, vo := cursor.find_closest_offsets(v.last_cursor_voffset)
+		bo, co, vo := cursor.find_closest_offsets(v.last_cursor_voffset, v.g.tabstop_length)
 		v.cursor.boffset = bo
 		v.cursor_coffset = co
 		v.cursor_voffset = vo
@@ -607,7 +607,7 @@ func (v *view) cursor_position() (int, int) {
 
 func (v *view) cursor_position_for(cursor cursor_location) (int, int) {
 	y := cursor.line_num - v.top_line_num
-	x := cursor.voffset() - v.line_voffset
+	x := cursor.voffset(v.g.tabstop_length) - v.line_voffset
 	return x, y
 }
 
@@ -618,12 +618,12 @@ func (v *view) cursor_position_for(cursor cursor_location) (int, int) {
 func (v *view) move_cursor_to(c cursor_location) {
 	v.dirty |= dirty_status
 	if c.boffset < 0 {
-		bo, co, vo := c.line.find_closest_offsets(v.last_cursor_voffset)
+		bo, co, vo := c.line.find_closest_offsets(v.last_cursor_voffset, v.g.tabstop_length)
 		v.cursor.boffset = bo
 		v.cursor_coffset = co
 		v.cursor_voffset = vo
 	} else {
-		vo, co := c.voffset_coffset()
+		vo, co := c.voffset_coffset(v.g.tabstop_length)
 		v.cursor.boffset = c.boffset
 		v.cursor_coffset = co
 		v.cursor_voffset = vo
@@ -1763,11 +1763,11 @@ func (v *view) filter_text(from, to cursor_location, filter func([]byte) []byte)
 	}
 }
 
-func fill_region_filt(data []byte, maxv int, prefix []byte) []byte {
+func fill_region_filt(data []byte, maxv int, prefix []byte, tabstop_length int) []byte {
 	var buf, out bytes.Buffer
 	indent := data[:index_first_non_space(data)]
-	indent_vlen := vlen(indent, 0)
-	prefix_vlen := vlen(prefix, indent_vlen)
+	indent_vlen := vlen(indent, 0, tabstop_length)
+	prefix_vlen := vlen(prefix, indent_vlen, tabstop_length)
 	offset := 0
 	for {
 		// for each line
@@ -1824,7 +1824,7 @@ func fill_region_filt(data []byte, maxv int, prefix []byte) []byte {
 			}
 
 			// advance v and i
-			v += rune_advance_len(r, v)
+			v += rune_advance_len(r, v, tabstop_length)
 			i += rlen
 
 			if lastspacei != -1 && v >= maxv {
@@ -1847,7 +1847,7 @@ func fill_region_filt(data []byte, maxv int, prefix []byte) []byte {
 
 func (v *view) fill_region(maxv int, prefix []byte) {
 	filt := func(data []byte) []byte {
-		return fill_region_filt(data, maxv, prefix)
+		return fill_region_filt(data, maxv, prefix, v.g.tabstop_length)
 	}
 	beg, end := v.line_region()
 	v.filter_text(beg, end, filt)
