@@ -1,7 +1,8 @@
 package main
 
 import (
-	"github.com/glycerine/tcell_old_hacked_up/termbox"
+	"github.com/gdamore/tcell/v2"
+	//"github.com/glycerine/tcell_old_hacked_up/termbox"
 )
 
 type autocomplete_mode struct {
@@ -57,9 +58,9 @@ func (a *autocomplete_mode) substitute_next() {
 	view.finalize_action_group()
 }
 
-func (a *autocomplete_mode) on_key(ev *termbox.Event) {
+func (a *autocomplete_mode) on_key(ev *tcell.EventKey) {
 	g := a.gemacs
-	if ev.Mod&termbox.ModAlt != 0 && ev.Ch == '/' {
+	if ev.Modifiers()&tcell.ModAlt != 0 && ev.Rune() == '/' {
 		a.substitute_next()
 		return
 	}

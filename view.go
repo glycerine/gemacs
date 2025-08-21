@@ -3,8 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/glycerine/tcell_old_hacked_up/termbox"
-	"github.com/glycerine/tulib"
+	tcell "github.com/gdamore/tcell/v2"
 	"os"
 	"strings"
 	"unicode/utf8"
@@ -71,8 +70,8 @@ func (r byte_range) includes(offset int) bool {
 	return r.begin <= offset && r.end > offset
 }
 
-const hl_fg = termbox.ColorCyan
-const hl_bg = termbox.ColorBlue
+const hl_fg = tcell.ColorLightCyan
+const hl_bg = tcell.ColorBlue
 
 //----------------------------------------------------------------------------
 // view tags
@@ -83,8 +82,8 @@ type view_tag struct {
 	beg_offset int
 	end_line   int
 	end_offset int
-	fg         termbox.Attribute
-	bg         termbox.Attribute
+	fg         tcell.Color
+	bg         tcell.Color
 }
 
 func (t *view_tag) includes(line, offset int) bool {
@@ -101,8 +100,8 @@ func (t *view_tag) includes(line, offset int) bool {
 }
 
 var default_view_tag = view_tag{
-	fg: termbox.ColorDefault,
-	bg: termbox.ColorDefault,
+	fg: tcell.ColorDefault,
+	bg: tcell.ColorDefault,
 }
 
 //----------------------------------------------------------------------------
@@ -138,7 +137,7 @@ type view struct {
 	ctx              view_context
 	tmpbuf           bytes.Buffer // temporary buffer for status bar text
 	buf              *buffer      // currently displayed buffer
-	uibuf            *tulib.Buffer
+	uibuf            *tcell.CellBuffer
 	dirty            dirty_flag
 	oneline          bool
 	ac               *autocompl
@@ -149,31 +148,31 @@ type view struct {
 	tags             []view_tag
 	pressesSinceEsc  int64
 	g                *gemacs
-	
+
 	// Syntax highlighting
-	syntax_tokens    map[int][]Token // line number -> tokens
-	syntax_language  *Language
-	syntax_theme     *Theme
+	syntax_tokens   map[int][]Token // line number -> tokens
+	syntax_language *Language
+	syntax_theme    *Theme
 }
 
 func new_view(ctx view_context, buf *buffer, g *gemacs) *view {
 	v := new(view)
 	v.g = g
 	v.ctx = ctx
-	v.uibuf = tulib.NewBuffer(1, 1) // the only place NewBuffer is called.
+	v.uibuf = NewBuffer(1, 1) // the only place NewBuffer is called.
 	v.attach(buf)
 	v.ac_decide = default_ac_decide
 	v.highlight_ranges = make([]byte_range, 0, 10)
 	v.tags = make([]view_tag, 0, 10)
 	v.pressesSinceEsc = 4
-	
+
 	// Initialize syntax highlighting
 	v.syntax_tokens = make(map[int][]Token)
 	if g.syntax_highlighter != nil {
 		v.syntax_language = g.syntax_highlighter.DetectLanguage(buf.path)
 		v.syntax_theme = g.syntax_highlighter.GetTheme("default")
 	}
-	
+
 	return v
 }
 
@@ -199,7 +198,7 @@ func (v *view) attach(b *buffer) {
 	v.view_location = b.loc
 	b.add_view(v)
 	v.dirty = dirty_everything
-	
+
 	// Update syntax highlighting for new buffer
 	v.update_syntax_language()
 }
@@ -271,7 +270,7 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 	tabstop := 0
 	bx := 0
 	data := line.data
-	y := coff / v.uibuf.Width
+	y := coff / v.uibuf.Rect.Width
 
 	live := v.uibuf.Screen != nil
 
@@ -288,18 +287,10 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 			tabstop += v.g.tabstop_length
 		}
 
-		if rx >= v.uibuf.Width {
-			last := coff + v.uibuf.Width - 1
+		if rx >= v.uibuf.Rect.Width {
+			last := coff + v.uibuf.Rect.Width - 1
 
-			v.uibuf.Cells[last] = termbox.Cell{
-				Ch: '>',
-				Fg: termbox.ColorDefault,
-				Bg: termbox.ColorDefault,
-			}
-			if live {
-				st := termbox.MakeStyle(termbox.ColorDefault, termbox.ColorDefault)
-				v.uibuf.Screen.SetContent(v.uibuf.Width-1, y, '>', nil, st)
-			}
+			v.uibuf.Set(last, y, tcell.NewCell('>', tcell.StyleDefault.Foreground(tcell.ColorDefault).Background(tcell.ColorDefault)))
 
 			break
 		}
@@ -310,57 +301,34 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 			// fill with spaces to the next tabstop
 			for ; x < tabstop; x++ {
 				rx := x - line_voffset
-				if rx >= v.uibuf.Width {
+				if rx >= v.uibuf.Rect.Width {
 					break
 				}
 
 				if rx >= 0 {
 					cell := v.make_cell(line_num, bx, ' ')
-					v.uibuf.Cells[coff+rx] = cell
-					if live {
-						st := termbox.MakeStyle(cell.Fg, cell.Bg)
-						v.uibuf.Screen.SetContent(rx, y, ' ', nil, st)
-					}
+					v.uibuf.Set(rx, y, cell)
 				}
 			}
 		case r < 32:
 			// invisible chars like ^R or ^@
-			red := termbox.MakeStyle(termbox.ColorRed, termbox.ColorDefault)
+			red := tcell.StyleDefault.Foreground(tcell.ColorRed).Background(tcell.ColorDefault)
 			if rx >= 0 {
-				v.uibuf.Cells[coff+rx] = termbox.Cell{
-					Ch: '^',
-					Fg: termbox.ColorRed,
-					Bg: termbox.ColorDefault,
-				}
-				if live {
-					v.uibuf.Screen.SetContent(rx, y, '^', nil, red)
-				}
+				v.uibuf.Set(rx, y, tcell.NewCell('^', red))
 			}
 			x++
 			rx = x - line_voffset
-			if rx >= v.uibuf.Width {
+			if rx >= v.uibuf.Rect.Width {
 				break
 			}
 			if rx >= 0 {
-				v.uibuf.Cells[coff+rx] = termbox.Cell{
-					Ch: invisible_rune_table[r],
-					Fg: termbox.ColorRed,
-					Bg: termbox.ColorDefault,
-				}
-				if live {
-					v.uibuf.Screen.SetContent(rx, y, invisible_rune_table[r], nil, red)
-				}
+				v.uibuf.Set(rx, y, tcell.NewCell(invisible_rune_table[r], red))
 			}
 			x++
 		default:
 			if rx >= 0 {
 				cell := v.make_cell(line_num, bx, r)
-				v.uibuf.Cells[coff+rx] = v.make_cell(
-					line_num, bx, r)
-				if live {
-					st := termbox.MakeStyle(cell.Fg, cell.Bg)
-					v.uibuf.Screen.SetContent(rx, y, r, nil, st)
-				}
+				v.uibuf.Set(rx, y, cell)
 			}
 			x += rune_width(r)
 		}
@@ -369,15 +337,7 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 	}
 
 	if line_voffset != 0 {
-		v.uibuf.Cells[coff] = termbox.Cell{
-			Ch: '<',
-			Fg: termbox.ColorDefault,
-			Bg: termbox.ColorDefault,
-		}
-		if live {
-			st := termbox.MakeStyle(termbox.ColorDefault, termbox.ColorDefault)
-			v.uibuf.Screen.SetContent(0, y, '<', nil, st)
-		}
+		v.uibuf.Set(coff, y, tcell.NewCell('<', tcell.StyleDefault.Foreground(tcell.ColorDefault).Background(tcell.ColorDefault)))
 	}
 }
 
@@ -387,13 +347,9 @@ func (v *view) draw_contents() {
 	}
 
 	// clear the buffer
-	v.uibuf.Fill(v.uibuf.Rect, termbox.Cell{
-		Ch: ' ',
-		Fg: termbox.ColorDefault,
-		Bg: termbox.ColorDefault,
-	})
+	v.uibuf.Fill(v.uibuf.Rect, tcell.NewCell(' ', tcell.StyleDefault.Foreground(tcell.ColorDefault).Background(tcell.ColorDefault)))
 
-	if v.uibuf.Width == 0 || v.uibuf.Height == 0 {
+	if v.uibuf.Rect.Width == 0 || v.uibuf.Rect.Height == 0 {
 		return
 	}
 
@@ -412,7 +368,7 @@ func (v *view) draw_contents() {
 			v.draw_line(line, v.top_line_num+y, coff, 0)
 		}
 
-		coff += v.uibuf.Width
+		coff += v.uibuf.Rect.Width
 		line = line.next
 	}
 }
@@ -424,34 +380,26 @@ func (v *view) draw_status() {
 
 	// fill background with '-'
 	lp := default_label_params
-	lp.Bg = termbox.AttrReverse
-	lp.Fg = termbox.AttrReverse | termbox.AttrBold
-	v.uibuf.Fill(tulib.Rect{0, v.height(), v.uibuf.Width, 1}, termbox.Cell{
-		Fg: termbox.AttrReverse,
-		Bg: termbox.AttrReverse,
-		Ch: '-',
-	})
+	lp.Bg = tcell.StyleDefault.Reverse(true).Background(tcell.ColorDefault)
+	lp.Fg = tcell.StyleDefault.Reverse(true).Bold(true).Foreground(tcell.ColorDefault)
+	v.uibuf.Fill(Rect{0, v.height(), v.uibuf.Rect.Width, 1}, tcell.NewCell('-', tcell.StyleDefault.Reverse(true).Foreground(tcell.ColorDefault).Background(tcell.ColorDefault)))
 
 	// on disk sync status
 	if !v.buf.synced_with_disk() {
-		cell := termbox.Cell{
-			Fg: termbox.AttrReverse,
-			Bg: termbox.AttrReverse,
-			Ch: '*',
-		}
+		cell := tcell.NewCell('*', tcell.StyleDefault.Reverse(true).Foreground(tcell.ColorDefault).Background(tcell.ColorDefault))
 		v.uibuf.Set(1, v.height(), cell)
 		v.uibuf.Set(2, v.height(), cell)
 	}
 
 	// filename
 	fmt.Fprintf(&v.tmpbuf, "  %s  ", v.buf.name)
-	v.uibuf.DrawLabel(tulib.Rect{5, v.height(), v.uibuf.Width, 1},
+	v.uibuf.DrawLabel(Rect{5, v.height(), v.uibuf.Rect.Width, 1},
 		&lp, v.tmpbuf.Bytes())
 	namel := v.tmpbuf.Len()
-	lp.Fg = termbox.AttrReverse
+	lp.Fg = tcell.StyleDefault.Reverse(true).Foreground(tcell.ColorDefault)
 	v.tmpbuf.Reset()
 	fmt.Fprintf(&v.tmpbuf, "(%d, %d)  ", v.cursor.line_num, v.cursor_voffset)
-	v.uibuf.DrawLabel(tulib.Rect{5 + namel, v.height(), v.uibuf.Width, 1},
+	v.uibuf.DrawLabel(Rect{5 + namel, v.height(), v.uibuf.Rect.Width, 1},
 		&lp, v.tmpbuf.Bytes())
 	v.tmpbuf.Reset()
 }
@@ -1098,7 +1046,7 @@ func (v *view) on_insert(a *action) {
 	v.move_cursor_to(c)
 	v.last_cursor_voffset = v.cursor_voffset
 	v.dirty = dirty_everything
-	
+
 	// Invalidate syntax tokens for affected lines
 	if len(a.lines) > 0 {
 		// New lines were added, invalidate from current line onwards
@@ -1134,7 +1082,7 @@ func (v *view) on_delete(a *action) {
 	v.move_cursor_to(c)
 	v.last_cursor_voffset = v.cursor_voffset
 	v.dirty = dirty_everything
-	
+
 	// Invalidate syntax tokens for affected lines
 	if len(a.lines) > 0 {
 		// Lines were deleted, invalidate from current line onwards
@@ -1242,85 +1190,85 @@ func (v *view) on_vcommand(cmd vcommand, arg rune) {
 }
 
 // handleShellKey handles key events for shell buffers
-func (v *view) handleShellKey(ev *termbox.Event) {
+func (v *view) handleShellKey(ev *tcell.EventKey) {
 	shell := v.g.shell_manager.GetShell(v.buf.name)
 	if shell == nil {
 		// Not a managed shell buffer, handle normally
 		return
 	}
-	
-	switch ev.Key {
-	case termbox.KeyEnter:
+
+	switch ev.Key() {
+	case tcell.KeyEnter:
 		// Enter shell mode for command input
 		shellMode := InitShellMode(v.g, shell)
 		v.g.set_overlay_mode(shellMode)
-		
+
 	default:
 		// For other keys, handle normally (navigation, etc.)
 		// but in read-only mode for shell output
-		switch ev.Key {
-		case termbox.KeyCtrlF, termbox.KeyArrowRight:
+		switch ev.Key() {
+		case tcell.KeyCtrlF, tcell.KeyRight:
 			v.on_vcommand(vcommand_move_cursor_forward, 0)
-		case termbox.KeyCtrlB, termbox.KeyArrowLeft:
+		case tcell.KeyCtrlB, tcell.KeyLeft:
 			v.on_vcommand(vcommand_move_cursor_backward, 0)
-		case termbox.KeyCtrlN, termbox.KeyArrowDown:
+		case tcell.KeyCtrlN, tcell.KeyDown:
 			v.on_vcommand(vcommand_move_cursor_next_line, 0)
-		case termbox.KeyCtrlP, termbox.KeyArrowUp:
+		case tcell.KeyCtrlP, tcell.KeyUp:
 			v.on_vcommand(vcommand_move_cursor_prev_line, 0)
-		case termbox.KeyCtrlV, termbox.KeyPgdn:
+		case tcell.KeyCtrlV, tcell.KeyPgDn:
 			v.on_vcommand(vcommand_move_view_half_forward, 0)
-		case termbox.KeyCtrlE, termbox.KeyEnd:
+		case tcell.KeyCtrlE, tcell.KeyEnd:
 			v.on_vcommand(vcommand_move_cursor_end_of_line, 0)
-		case termbox.KeyCtrlA, termbox.KeyHome:
+		case tcell.KeyCtrlA, tcell.KeyHome:
 			v.on_vcommand(vcommand_move_cursor_beginning_of_line, 0)
 		}
 	}
 }
 
-func (v *view) on_key(ev *termbox.Event) {
-	//pp("view on_key called, Ch='%v', ev.Key = '%#v', termbox.ModAlt=%v", string(ev.Ch), ev, termbox.ModAlt)
+func (v *view) on_key(ev *tcell.EventKey) {
+	//pp("view on_key called, Ch='%v', ev.Key = '%#v', tcell.ModAlt=%v", string(ev.Rune()), ev, tcell.ModAlt)
 	//defer pp("view.on_key done.")
-	
+
 	// Handle shell buffers specially
 	if IsShellBuffer(v.buf) {
 		v.handleShellKey(ev)
 		return
 	}
-	
-	switch ev.Key {
-	case termbox.KeyCtrlF, termbox.KeyArrowRight:
+
+	switch ev.Key() {
+	case tcell.KeyCtrlF, tcell.KeyRight:
 		v.on_vcommand(vcommand_move_cursor_forward, 0)
-	case termbox.KeyCtrlB, termbox.KeyArrowLeft:
+	case tcell.KeyCtrlB, tcell.KeyLeft:
 		v.on_vcommand(vcommand_move_cursor_backward, 0)
-	case termbox.KeyCtrlN, termbox.KeyArrowDown:
+	case tcell.KeyCtrlN, tcell.KeyDown:
 		if v.ac != nil {
 			//pp("about to v.on_vcommand(vcommand_autocompl_move_cursor_down, 0)")
 			v.on_vcommand(vcommand_autocompl_move_cursor_down, 0)
 			break
 		}
 		v.on_vcommand(vcommand_move_cursor_next_line, 0)
-	case termbox.KeyCtrlP, termbox.KeyArrowUp:
+	case tcell.KeyCtrlP, tcell.KeyUp:
 		if v.ac != nil {
 			v.on_vcommand(vcommand_autocompl_move_cursor_up, 0)
 			break
 		}
 		v.on_vcommand(vcommand_move_cursor_prev_line, 0)
-	case termbox.KeyCtrlE, termbox.KeyEnd:
+	case tcell.KeyCtrlE, tcell.KeyEnd:
 		v.on_vcommand(vcommand_move_cursor_end_of_line, 0)
-	case termbox.KeyCtrlA, termbox.KeyHome:
+	case tcell.KeyCtrlA, tcell.KeyHome:
 		v.on_vcommand(vcommand_move_cursor_beginning_of_line, 0)
-	case termbox.KeyCtrlV, termbox.KeyPgdn:
+	case tcell.KeyCtrlV, tcell.KeyPgDn:
 		v.on_vcommand(vcommand_move_view_half_forward, 0)
-	case termbox.KeyCtrlL:
+	case tcell.KeyCtrlL:
 		v.on_vcommand(vcommand_recenter, 0)
-	case termbox.KeyCtrlSlash:
+	case tcell.KeyCtrlSlash:
 		v.on_vcommand(vcommand_undo, 0)
-	case termbox.KeySpace:
+	case tcell.KeySpace:
 		v.on_vcommand(vcommand_insert_rune, ' ') // space, 1st time.
-	case termbox.KeyEnter, termbox.KeyCtrlJ:
+	case tcell.KeyEnter, tcell.KeyCtrlJ:
 		//pp("enter")
 		c := '\n'
-		if ev.Key == termbox.KeyEnter {
+		if ev.Key() == tcell.KeyEnter {
 			// we use '\r' for <enter>, because it doesn't cause
 			// autoindent
 			c = '\r'
@@ -1334,35 +1282,35 @@ func (v *view) on_key(ev *termbox.Event) {
 			//pp("insert rune c='%v' ('%v')", string(c), c)
 			v.on_vcommand(vcommand_insert_rune, c)
 		}
-	case termbox.KeyBackspace, termbox.KeyBackspace2:
-		if ev.Mod&termbox.ModAlt != 0 {
+	case tcell.KeyBackspace, tcell.KeyBackspace2:
+		if ev.Mod()&tcell.ModAlt != 0 {
 			v.on_vcommand(vcommand_kill_word_backward, 0)
 		} else {
 			v.on_vcommand(vcommand_delete_rune_backward, 0)
 		}
-	case termbox.KeyDelete, termbox.KeyCtrlD:
+	case tcell.KeyDelete, tcell.KeyCtrlD:
 		v.on_vcommand(vcommand_delete_rune, 0)
-	case termbox.KeyCtrlK:
+	case tcell.KeyCtrlK:
 		v.on_vcommand(vcommand_kill_line, 0)
-	case termbox.KeyPgup:
+	case tcell.KeyPgUp:
 		v.on_vcommand(vcommand_move_view_half_backward, 0)
-	case termbox.KeyTab:
+	case tcell.KeyTab:
 		if v.ac != nil {
 			//pp("autocompl_tab")
 			v.on_vcommand(vcommand_autocompl_tab, 0)
 		}
 		v.on_vcommand(vcommand_insert_rune, '\t')
-	case termbox.KeyCtrlSpace:
-		if ev.Ch == 0 {
+	case tcell.KeyCtrlSpace:
+		if ev.Rune() == 0 {
 			v.set_mark()
 		}
-	case termbox.KeyCtrlW:
+	case tcell.KeyCtrlW:
 		v.on_vcommand(vcommand_kill_region, 0)
-	case termbox.KeyCtrlY:
+	case tcell.KeyCtrlY:
 		v.on_vcommand(vcommand_yank, 0)
 	}
 
-	if ev.Key == termbox.KeyEsc {
+	if ev.Key() == tcell.KeyEsc {
 		//pp("terbox.KeyEsc recognized!")
 		v.pressesSinceEsc = 0
 		v.g.set_status("ESC-")
@@ -1375,9 +1323,9 @@ func (v *view) on_key(ev *termbox.Event) {
 		}
 	}
 
-	if ev.Mod&termbox.ModAlt != 0 || v.pressesSinceEsc == 1 {
-		//pp("view, in Esc handling, Ch='%v'. v.pressesSinceEsc=%v", string(ev.Ch), v.pressesSinceEsc)
-		switch ev.Ch {
+	if ev.Mod()&tcell.ModAlt != 0 || v.pressesSinceEsc == 1 {
+		//pp("view, in Esc handling, Ch='%v'. v.pressesSinceEsc=%v", string(ev.Rune()), v.pressesSinceEsc)
+		switch ev.Rune() {
 		case 'v':
 			v.on_vcommand(vcommand_move_view_half_backward, 0)
 		case '<':
@@ -1399,14 +1347,14 @@ func (v *view) on_key(ev *termbox.Event) {
 		case 'c':
 			v.on_vcommand(vcommand_word_to_title, 0)
 		}
-	} else if ev.Ch != 0 {
-		//pp("view, final on_vcommand for ev.Ch='%v'", string(ev.Ch))
+	} else if ev.Rune() != 0 {
+		//pp("view, final on_vcommand for ev.Ch='%v'", string(ev.Rune()))
 		// jea: in gemacs, space had ev.Ch == 0, so didn't get here.
 		// However in tcell/compat mode, ev.Ch == 32.
 		// Not sure what else is relying on this, so for now
 		// just don't double up on spaces.
-		if ev.Ch != 32 {
-			v.on_vcommand(vcommand_insert_rune, ev.Ch) // space 2nd time only.
+		if ev.Rune() != 32 {
+			v.on_vcommand(vcommand_insert_rune, ev.Rune()) // space 2nd time only.
 		}
 	}
 }
@@ -1456,37 +1404,24 @@ func (v *view) tag(line, offset int) *view_tag {
 	return &default_view_tag
 }
 
-func (v *view) make_cell(line, offset int, ch rune) termbox.Cell {
+func (v *view) make_cell(line, offset int, ch rune) tcell.Cell {
 	tag := v.tag(line, offset)
-	if tag != &default_view_tag {
-		return termbox.Cell{
-			Ch: ch,
-			Fg: tag.fg,
-			Bg: tag.bg,
-		}
-	}
+	style := tcell.StyleDefault.Foreground(tag.fg).Background(tag.bg)
 
-	cell := termbox.Cell{
-		Ch: ch,
-		Fg: tag.fg,
-		Bg: tag.bg,
-	}
-	
 	// Check for syntax highlighting first
 	if v.syntax_theme != nil && v.syntax_language != nil && v.g.syntax_highlighter.IsEnabled() {
 		if tokenType := v.get_token_type_at(line, offset); tokenType != TokenNone {
 			if color, exists := v.syntax_theme.Colors[tokenType]; exists {
-				cell.Fg = color
+				style = style.Foreground(color)
 			}
 		}
 	}
-	
+
 	// Search highlighting takes precedence
 	if v.in_one_of_highlight_ranges(offset) {
-		cell.Fg = hl_fg
-		cell.Bg = hl_bg
+		style = style.Foreground(hl_fg).Background(hl_bg)
 	}
-	return cell
+	return tcell.NewCell(ch, style)
 }
 
 // get_token_type_at returns the token type at the given line and offset
@@ -1510,7 +1445,7 @@ func (v *view) tokenize_line(line_num int) {
 	if v.syntax_language == nil || !v.g.syntax_highlighter.IsEnabled() {
 		return
 	}
-	
+
 	// Find the line data
 	line := v.buf.first_line
 	current_line_num := 1
@@ -1518,7 +1453,7 @@ func (v *view) tokenize_line(line_num int) {
 		line = line.next
 		current_line_num++
 	}
-	
+
 	if line != nil {
 		tokens := v.g.syntax_highlighter.TokenizeLine(line.data, v.syntax_language)
 		v.syntax_tokens[line_num] = tokens
@@ -1533,7 +1468,7 @@ func (v *view) invalidate_syntax_tokens(start_line, end_line int) {
 	if end_line < 0 {
 		end_line = v.buf.lines_n
 	}
-	
+
 	for line_num := start_line; line_num <= end_line; line_num++ {
 		delete(v.syntax_tokens, line_num)
 	}

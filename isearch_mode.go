@@ -161,9 +161,9 @@ func (m *isearch_mode) advance_search() {
 	m.search(true)
 }
 
-func (m *isearch_mode) on_key(ev *termbox.Event) {
-	switch ev.Key {
-	case termbox.KeyCtrlR:
+func (m *isearch_mode) on_key(ev *tcell.EventKey) {
+	switch ev.Key() {
+	case tcell.KeyCtrlR:
 		if !m.backward {
 			m.backward = true
 			m.prepare_prompts()

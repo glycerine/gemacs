@@ -1,8 +1,7 @@
 package main
 
 import (
-	"github.com/glycerine/tcell_old_hacked_up/termbox"
-	"github.com/glycerine/tulib"
+	"github.com/gdamore/tcell/v2"
 	"strings"
 	"unicode/utf8"
 )
@@ -36,10 +35,10 @@ func (l *line_edit_mode) exit() {
 	}
 }
 
-func (l *line_edit_mode) on_key(ev *termbox.Event) {
-	//pp("line_edit_mode on_key, Ch='%v', ev.Key = '%#v'", string(ev.Ch), ev)
-	switch ev.Key {
-	case termbox.KeyEnter, termbox.KeyCtrlJ:
+func (l *line_edit_mode) on_key(ev *tcell.EventKey) {
+	//pp("line_edit_mode on_key, Ch='%v', ev.Key = '%#v'", string(ev.Rune()), ev)
+	switch ev.Key() {
+	case tcell.KeyEnter, tcell.KeyCtrlJ:
 		//pp("enter")
 		if l.lineview.ac != nil {
 			//pp("l.lineview.ac != nil")
@@ -56,7 +55,7 @@ func (l *line_edit_mode) on_key(ev *termbox.Event) {
 			//pp("l.on_apply != nil")
 			l.on_apply(l.linebuf)
 		}
-	case termbox.KeyTab:
+	case tcell.KeyTab:
 		//pp("KeyTab.") //  l.lineview='%#v'", l.lineview)
 		if l.lineview.ac == nil {
 			l.lineview.on_vcommand(vcommand_autocompl_init, 0)
@@ -70,8 +69,8 @@ func (l *line_edit_mode) on_key(ev *termbox.Event) {
 	}
 }
 
-func (l *line_edit_mode) resize(ev *termbox.Event) {
-	w, h := ev.Width-l.prompt_w-1, 1
+func (l *line_edit_mode) resize(ev *tcell.EventResize) {
+	w, h := ev.Size()
 	if w < 1 || ev.Height < 1 {
 		return
 	}
@@ -83,25 +82,21 @@ func (l *line_edit_mode) draw() {
 	view := l.lineview
 
 	// update label
-	prompt_r := tulib.Rect{
-		0, ui.Height - 1,
+	prompt_r := Rect{
+		0, ui.Rect.Height - 1,
 		l.prompt_w + 1, 1,
 	}
-	ui.Fill(prompt_r, termbox.Cell{
-		Fg: termbox.ColorDefault,
-		Bg: termbox.ColorDefault,
-		Ch: ' ',
-	})
+	ui.Fill(prompt_r, tcell.NewCell(' ', tcell.StyleDefault.Foreground(tcell.ColorDefault).Background(tcell.ColorDefault)))
 	lp := default_label_params
-	lp.Fg = termbox.ColorCyan
+	lp.Fg = tcell.ColorCyan
 	ui.DrawLabel(prompt_r, &lp, l.prompt)
 
 	// update line view
-	view.resize(ui.Width-l.prompt_w-1, 1)
+	view.resize(ui.Rect.Width-l.prompt_w-1, 1)
 	view.draw()
-	line_r := tulib.Rect{
-		l.prompt_w + 1, ui.Height - 1,
-		view.uibuf.Width, view.uibuf.Height,
+	line_r := Rect{
+		l.prompt_w + 1, ui.Rect.Height - 1,
+		view.uibuf.Rect.Width, view.uibuf.Rect.Height,
 	}
 	ui.Blit(line_r, 0, 0, view.uibuf) // unnamed being written here.
 	if view.ac == nil {

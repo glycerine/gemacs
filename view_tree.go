@@ -1,8 +1,6 @@
 package main
 
-import (
-	"github.com/glycerine/tulib"
-)
+import ()
 
 //----------------------------------------------------------------------------
 // view_tree
@@ -13,15 +11,15 @@ type view_tree struct {
 	// 1) 'left', 'right' and 'split'
 	// 2) 'top', 'bottom' and 'split'
 	// 3) 'leaf'
-	parent     *view_tree
-	left       *view_tree
-	top        *view_tree
-	right      *view_tree
-	bottom     *view_tree
-	leaf       *view
-	split      float32
-	tulib.Rect // updated with 'resize' call
-	g          *gemacs
+	parent *view_tree
+	left   *view_tree
+	top    *view_tree
+	right  *view_tree
+	bottom *view_tree
+	leaf   *view
+	split  float32
+	Rect
+	g *gemacs
 }
 
 func new_view_tree_leaf(parent *view_tree, v *view, g *gemacs) *view_tree {
@@ -69,7 +67,7 @@ func (v *view_tree) draw() {
 	}
 }
 
-func (v *view_tree) resize(pos tulib.Rect) {
+func (v *view_tree) resize(pos Rect) {
 	v.Rect = pos
 	if v.leaf != nil {
 		v.leaf.resize(pos.Width, pos.Height)
@@ -85,8 +83,8 @@ func (v *view_tree) resize(pos tulib.Rect) {
 		}
 		lw := int(float32(w) * v.split)
 		rw := w - lw
-		v.left.resize(tulib.Rect{pos.X, pos.Y, lw, pos.Height})
-		v.right.resize(tulib.Rect{pos.X + lw + 1, pos.Y, rw, pos.Height})
+		v.left.resize(Rect{pos.X, pos.Y, lw, pos.Height})
+		v.right.resize(Rect{pos.X + lw + 1, pos.Y, rw, pos.Height})
 	} else {
 		// vertical split, use 'h', no need to reserve one line for
 		// splitter, because splitters are part of the buffer's output
@@ -94,8 +92,8 @@ func (v *view_tree) resize(pos tulib.Rect) {
 		h := pos.Height
 		th := int(float32(h) * v.split)
 		bh := h - th
-		v.top.resize(tulib.Rect{pos.X, pos.Y, pos.Width, th})
-		v.bottom.resize(tulib.Rect{pos.X, pos.Y + th, pos.Width, bh})
+		v.top.resize(Rect{pos.X, pos.Y, pos.Width, th})
+		v.bottom.resize(Rect{pos.X, pos.Y + th, pos.Width, bh})
 	}
 }
 

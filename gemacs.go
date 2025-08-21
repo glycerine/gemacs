@@ -9,10 +9,7 @@ import (
 	"strconv"
 	"unicode"
 
-	"github.com/glycerine/tcell_old_hacked_up"
-	"github.com/glycerine/tcell_old_hacked_up/encoding"
-	"github.com/glycerine/tcell_old_hacked_up/termbox"
-	"github.com/glycerine/tulib"
+	"github.com/gdamore/tcell/v2"
 	"github.com/glycerine/verb"
 )
 
@@ -32,34 +29,29 @@ func init() {
 }
 
 const (
-	default_tabstop_length    = 4  // Changed default from 8 to 4
+	default_tabstop_length    = 4 // Changed default from 8 to 4
 	view_vertical_threshold   = 5
 	view_horizontal_threshold = 10
 )
 
 // this is a structure which represents a key press, used for keyboard macros
 type key_event struct {
-	mod termbox.Modifier
+	mod tcell.ModMask
 	_   [1]byte
-	key termbox.Key
+	key tcell.Key
 	ch  rune
 }
 
-func create_key_event(ev *termbox.Event) key_event {
+func create_key_event(ev *tcell.EventKey) key_event {
 	return key_event{
-		mod: ev.Mod,
-		key: ev.Key,
-		ch:  ev.Ch,
+		mod: ev.Mod(),
+		key: ev.Key(),
+		ch:  ev.Rune(),
 	}
 }
 
-func (k key_event) to_termbox_event() termbox.Event {
-	return termbox.Event{
-		Type: termbox.EventKey,
-		Mod:  k.mod,
-		Key:  k.key,
-		Ch:   k.ch,
-	}
+func (k key_event) to_tcell_event() *tcell.EventKey {
+	return tcell.NewEventKey(k.key, k.ch, k.mod)
 }
 
 //----------------------------------------------------------------------------
@@ -70,24 +62,25 @@ func (k key_event) to_termbox_event() termbox.Event {
 //----------------------------------------------------------------------------
 
 type gemacs struct {
-	uibuf             *tulib.Buffer
-	active            *view_tree // this one is always a leaf node
-	views             *view_tree // a root node
-	buffers           []*buffer
-	lastcmdclass      vcommand_class
-	statusbuf         bytes.Buffer
-	quitflag          bool
-	overlay           overlay_mode
-	termbox_event     chan termbox.Event
-	keymacros         []key_event
-	recording         bool
-	killbuffer        []byte
-	isearch_last_word []byte
-	s_and_r_last_word []byte
-	s_and_r_last_repl []byte
+	screen             tcell.Screen
+	uibuf              *tcell.CellBuffer
+	active             *view_tree // this one is always a leaf node
+	views              *view_tree // a root node
+	buffers            []*buffer
+	lastcmdclass       vcommand_class
+	statusbuf          bytes.Buffer
+	quitflag           bool
+	overlay            overlay_mode
+	termbox_event      chan tcell.Event
+	keymacros          []key_event
+	recording          bool
+	killbuffer         []byte
+	isearch_last_word  []byte
+	s_and_r_last_word  []byte
+	s_and_r_last_repl  []byte
 	syntax_highlighter *SyntaxHighlighter
-	tabstop_length    int // Configurable tab stop length
-	shell_manager     *ShellManager // Shell management
+	tabstop_length     int           // Configurable tab stop length
+	shell_manager      *ShellManager // Shell management
 }
 
 func new_gemacs(filenames []string) *gemacs {
@@ -96,7 +89,7 @@ func new_gemacs(filenames []string) *gemacs {
 	g.syntax_highlighter = NewSyntaxHighlighter()
 	g.tabstop_length = default_tabstop_length
 	g.shell_manager = NewShellManager()
-	
+
 	for _, filename := range filenames {
 		g.new_buffer_from_file(filename)
 	}
@@ -299,7 +292,7 @@ func (g *gemacs) kill_all_views_but_active() {
 
 // Call it manually only when views layout has changed.
 func (g *gemacs) resize() {
-	g.uibuf = tulib.TermboxBuffer() // jea: only use of TermboxBuffer is here.
+	g.uibuf = TermboxBuffer(g.screen) // jea: only use of TermboxBuffer is here.
 	views_area := g.uibuf.Rect
 	views_area.Height -= 1 // reserve space for command line
 	g.views.resize(views_area)
@@ -349,7 +342,7 @@ func (g *gemacs) draw() {
 	} else {
 		cx, cy = g.cursor_position()
 	}
-	termbox.SetCursor(cx, cy)
+	g.screen.ShowCursor(cx, cy)
 }
 
 func (g *gemacs) draw_status() {
@@ -357,7 +350,7 @@ func (g *gemacs) draw_status() {
 	r := g.uibuf.Rect
 	r.Y = r.Height - 1
 	r.Height = 1
-	g.uibuf.Fill(r, termbox.Cell{Fg: lp.Fg, Bg: lp.Bg, Ch: ' '})
+	g.uibuf.Fill(r, tcell.NewCell(' ', tcell.StyleDefault.Foreground(lp.Fg).Background(lp.Bg)))
 	g.uibuf.DrawLabel(r, &lp, g.statusbuf.Bytes())
 }
 
@@ -374,11 +367,7 @@ func (g *gemacs) composite_recursively(v *view_tree) {
 		splitter.X -= 1
 		splitter.Width = 1
 		splitter.Height -= 1
-		g.uibuf.Fill(splitter, termbox.Cell{
-			Fg: termbox.AttrReverse,
-			Bg: termbox.AttrReverse,
-			Ch: '|',
-		})
+		g.uibuf.Fill(splitter, tcell.NewCell('|', tcell.StyleDefault.Reverse(true).Foreground(tcell.ColorDefault).Background(tcell.ColorDefault)))
 	} else {
 		g.composite_recursively(v.top)
 		g.composite_recursively(v.bottom)
@@ -390,8 +379,9 @@ func (g *gemacs) cursor_position() (int, int) {
 	return g.active.X + x, g.active.Y + y
 }
 
-func (g *gemacs) on_sys_key(ev *termbox.Event) {
-	switch ev.Key {
+func (g *gemacs) on_sys_key(ev *tcell.EventKey) {
+	switch ev.Key() {
+	case tcell.KeyCtrlG:
 	case termbox.KeyCtrlG:
 		v := g.active.leaf
 		v.ac = nil
@@ -402,9 +392,9 @@ func (g *gemacs) on_sys_key(ev *termbox.Event) {
 	}
 }
 
-func (g *gemacs) on_alt_key(ev *termbox.Event) bool {
+func (g *gemacs) on_alt_key(ev *tcell.EventKey) bool {
 	//pp("on_alt_key() called, ev = '%#v'", ev)
-	switch ev.Ch {
+	switch ev.Rune() {
 	case 'g':
 		g.set_overlay_mode(init_line_edit_mode(g, g.goto_line_lemp()))
 		return true
@@ -421,18 +411,18 @@ func (g *gemacs) on_alt_key(ev *termbox.Event) bool {
 	return false
 }
 
-func (g *gemacs) on_key(ev *termbox.Event) {
-	//pp("top level gemacs.on_key: Ch='%v', ev='%#v'", string(ev.Ch), ev)
+func (g *gemacs) on_key(ev *tcell.EventKey) {
+	//pp("top level gemacs.on_key: Ch='%v', ev='%#v'", string(ev.Rune()), ev)
 	v := g.active.leaf
-	switch ev.Key {
-	case termbox.KeyCtrlX:
+	switch ev.Key() {
+	case tcell.KeyCtrlX:
 		g.set_overlay_mode(init_extended_mode(g))
-	case termbox.KeyCtrlS:
+	case tcell.KeyCtrlS:
 		g.set_overlay_mode(init_isearch_mode(g, false))
-	case termbox.KeyCtrlR:
+	case tcell.KeyCtrlR:
 		g.set_overlay_mode(init_isearch_mode(g, true))
 	default:
-		if ev.Mod&termbox.ModAlt != 0 && g.on_alt_key(ev) {
+		if ev.Mod()&tcell.ModAlt != 0 && g.on_alt_key(ev) {
 			break
 		}
 		v.on_key(ev) // space, 1st time. and 2nd time.
@@ -440,22 +430,22 @@ func (g *gemacs) on_key(ev *termbox.Event) {
 }
 
 func (g *gemacs) main_loop() {
-	g.termbox_event = make(chan termbox.Event, 20)
+	g.termbox_event = make(chan tcell.Event, 20)
 	go func() {
 		for {
-			g.termbox_event <- termbox.PollEventOnScreen(g.uibuf.Screen)
+			g.termbox_event <- g.screen.PollEvent()
 		}
 	}()
 	for {
 		select {
 		case ev := <-g.termbox_event:
-			ok := g.handle_event(&ev)
+			ok := g.handle_event(ev)
 			if !ok {
 				return
 			}
 			g.consume_more_events()
 			g.draw()
-			termbox.Flush()
+			g.screen.Show()
 		}
 	}
 }
@@ -464,7 +454,7 @@ func (g *gemacs) consume_more_events() bool {
 	for {
 		select {
 		case ev := <-g.termbox_event:
-			ok := g.handle_event(&ev)
+			ok := g.handle_event(ev)
 			if !ok {
 				return false
 			}
@@ -475,9 +465,9 @@ func (g *gemacs) consume_more_events() bool {
 	panic("unreachable")
 }
 
-func (g *gemacs) handle_event(ev *termbox.Event) bool {
-	switch ev.Type {
-	case termbox.EventKey:
+func (g *gemacs) handle_event(ev tcell.Event) bool {
+	switch ev := ev.(type) {
+	case *tcell.EventKey:
 		//pp("gemacs.handle_event, ev='%#v'", ev)
 		if g.recording {
 			g.keymacros = append(g.keymacros, create_key_event(ev))
@@ -494,14 +484,14 @@ func (g *gemacs) handle_event(ev *termbox.Event) bool {
 		if g.quitflag {
 			return false
 		}
-	case termbox.EventResize:
-		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+	case *tcell.EventResize:
+		g.screen.Clear()
 		g.resize()
 		if g.overlay != nil {
 			g.overlay.on_resize(ev)
 		}
-	case termbox.EventError:
-		panic(ev.Err)
+	case *tcell.EventError:
+		panic(ev.Error())
 	}
 
 	// just dump the current view location from the view to the buffer
@@ -742,7 +732,7 @@ func (g *gemacs) stop_recording() {
 
 func (g *gemacs) replay_macro() {
 	for _, keyev := range g.keymacros {
-		ev := keyev.to_termbox_event()
+		ev := keyev.to_tcell_event()
 		g.handle_event(&ev)
 	}
 }
@@ -796,27 +786,34 @@ func (g *gemacs) set_tab_size_lemp() line_edit_mode_params {
 }
 
 func main() {
-	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
-
-	err := termbox.Init()
+	s, err := tcell.NewScreen()
 	if err != nil {
 		panic(err)
 	}
-	defer termbox.Close()
-	termbox.SetInputMode(termbox.InputAlt)
+	defer s.Fini()
+
+	if err = s.Init(); err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(1)
+	}
+
+	s.SetStyle(tcell.StyleDefault)
+	s.EnableMouse()
+	s.Clear()
 
 	gemacs := new_gemacs(os.Args[1:])
-	
+	gemacs.screen = s
+
 	// Cleanup shells on exit
 	defer func() {
 		for name := range gemacs.shell_manager.shells {
 			gemacs.shell_manager.CloseShell(name)
 		}
 	}()
-	
+
 	gemacs.resize()
 	gemacs.draw()
-	termbox.SetCursor(gemacs.cursor_position())
-	termbox.Flush()
+	s.ShowCursor(gemacs.cursor_position())
+	s.Show()
 	gemacs.main_loop()
 }
