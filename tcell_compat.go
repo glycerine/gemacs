@@ -6,8 +6,7 @@ import (
 	"github.com/gdamore/tcell/v2/termbox"
 )
 
-// Global screen instance - will be set after termbox.Init()
-var globalScreen tcell.Screen
+// Note: Using termbox for screen management, so no global screen needed
 
 //----------------------------------------------------------------------------
 // tcell-based replacements for tulib functionality
@@ -68,51 +67,66 @@ type ScreenBuffer struct {
 	Width  int
 	Height int
 	Rect   Rect
+	// Internal buffer to store content before rendering
+	cells  [][]tcell.Style
+	chars  [][]rune
 }
 
-// NewScreenBuffer creates a new screen buffer using the provided tcell screen
+// NewScreenBuffer creates a new screen buffer with the given dimensions
 func NewScreenBuffer(screen tcell.Screen) *ScreenBuffer {
-	w, h := screen.Size()
-	return &ScreenBuffer{
+	w, h := 80, 24 // Default size, will be resized as needed
+	if screen != nil {
+		w, h = screen.Size()
+	}
+	sb := &ScreenBuffer{
 		Screen: screen,
 		Width:  w,
 		Height: h,
 		Rect:   Rect{0, 0, w, h},
 	}
+	sb.initBuffer()
+	return sb
 }
 
-// SetGlobalScreen sets the global screen instance
-func SetGlobalScreen(screen tcell.Screen) {
-	globalScreen = screen
-}
-
-// InitTestScreen initializes a mock screen for testing
-func InitTestScreen() {
-	if globalScreen == nil {
-		// Create a simulation screen for testing
-		s := tcell.NewSimulationScreen("")
-		s.Init()
-		globalScreen = s
+// initBuffer initializes the internal buffer arrays
+func (sb *ScreenBuffer) initBuffer() {
+	sb.cells = make([][]tcell.Style, sb.Height)
+	sb.chars = make([][]rune, sb.Height)
+	for y := 0; y < sb.Height; y++ {
+		sb.cells[y] = make([]tcell.Style, sb.Width)
+		sb.chars[y] = make([]rune, sb.Width)
+		for x := 0; x < sb.Width; x++ {
+			sb.cells[y][x] = tcell.StyleDefault
+			sb.chars[y][x] = ' '
+		}
 	}
 }
 
-// GetGlobalScreen returns the global screen instance
-func GetGlobalScreen() tcell.Screen {
-	return globalScreen
+// InitTestScreen initializes termbox for testing
+func InitTestScreen() {
+	// For tests, we can initialize termbox with simulation mode if needed
+	// For now, just return since tests don't need actual screen
 }
 
 // TermboxBuffer creates a new screen buffer from the current termbox screen
 func TermboxBuffer() *ScreenBuffer {
-	if globalScreen == nil {
-		panic("Global screen not initialized - call SetGlobalScreen first")
+	w, h := termbox.Size()
+	sb := &ScreenBuffer{
+		Screen: nil, // We don't need the screen reference for termbox mode
+		Width:  w,
+		Height: h,
+		Rect:   Rect{0, 0, w, h},
 	}
-	return NewScreenBuffer(globalScreen)
+	sb.initBuffer()
+	return sb
 }
 
-// SetContent sets content at the given position with style
+// SetContent sets content at the given position with style in the buffer
 func (sb *ScreenBuffer) SetContent(x, y int, primary rune, combining []rune, style tcell.Style) {
 	if x >= 0 && x < sb.Width && y >= 0 && y < sb.Height {
-		sb.Screen.SetContent(x, y, primary, combining, style)
+		sb.chars[y][x] = primary
+		sb.cells[y][x] = style
+		// Note: we ignore combining characters for simplicity
 	}
 }
 
@@ -154,12 +168,17 @@ func (sb *ScreenBuffer) DrawLabel(r Rect, lp *LabelParams, text string) {
 
 // Blit copies content from another screen buffer to this one
 func (sb *ScreenBuffer) Blit(r Rect, srcX, srcY int, src *ScreenBuffer) {
-	for y := 0; y < r.Height && y < src.Height; y++ {
-		for x := 0; x < r.Width && x < src.Width; x++ {
-			if srcX+x < src.Width && srcY+y < src.Height {
-				// Get content from source (we'll need to implement this)
-				// For now, just copy a space character with default style
-				sb.SetContent(r.X+x, r.Y+y, ' ', nil, tcell.StyleDefault)
+	for y := 0; y < r.Height && y+r.Y < sb.Height; y++ {
+		for x := 0; x < r.Width && x+r.X < sb.Width; x++ {
+			srcYPos := srcY + y
+			srcXPos := srcX + x
+			if srcXPos < src.Width && srcYPos < src.Height && srcXPos >= 0 && srcYPos >= 0 {
+				destX := r.X + x
+				destY := r.Y + y
+				if destX >= 0 && destY >= 0 && destX < sb.Width && destY < sb.Height {
+					sb.chars[destY][destX] = src.chars[srcYPos][srcXPos]
+					sb.cells[destY][destX] = src.cells[srcYPos][srcXPos]
+				}
 			}
 		}
 	}
@@ -170,6 +189,34 @@ func (sb *ScreenBuffer) Resize(w, h int) {
 	sb.Width = w
 	sb.Height = h
 	sb.Rect = Rect{0, 0, w, h}
+	sb.initBuffer()
+}
+
+// Flush renders the buffer content to the termbox screen
+func (sb *ScreenBuffer) Flush() {
+	for y := 0; y < sb.Height; y++ {
+		for x := 0; x < sb.Width; x++ {
+			// Convert tcell.Style to termbox attributes
+			style := sb.cells[y][x]
+			fg, bg, _ := style.Decompose()
+			
+			// Convert colors to termbox attributes (simplified)
+			var tbFg, tbBg termbox.Attribute
+			if fg == tcell.ColorDefault {
+				tbFg = termbox.ColorDefault
+			} else {
+				// For now, just use basic color mapping
+				tbFg = termbox.Attribute(fg + 1)
+			}
+			if bg == tcell.ColorDefault {
+				tbBg = termbox.ColorDefault
+			} else {
+				tbBg = termbox.Attribute(bg + 1)
+			}
+			
+			termbox.SetCell(x, y, sb.chars[y][x], tbFg, tbBg)
+		}
+	}
 }
 
 // Set is an alias for SetContent to maintain compatibility

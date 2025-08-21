@@ -453,7 +453,7 @@ func (g *gemacs) main_loop() {
 			}
 			g.consume_more_events()
 			g.draw()
-			GetGlobalScreen().Show()
+			termbox.Flush()
 		}
 	}
 }
@@ -493,7 +493,7 @@ func (g *gemacs) handle_event(ev *termbox.Event) bool {
 			return false
 		}
 	case termbox.EventResize:
-		GetGlobalScreen().Clear()
+		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 		g.resize()
 		if g.overlay != nil {
 			g.overlay.on_resize(ev)
@@ -796,19 +796,13 @@ func (g *gemacs) set_tab_size_lemp() line_edit_mode_params {
 func main() {
 	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
 
-	// Create tcell screen directly
-	screen, err := tcell.NewScreen()
+	// Use termbox initialization which properly sets up the screen
+	err := termbox.Init()
 	if err != nil {
 		panic(err)
 	}
-	err = screen.Init()
-	if err != nil {
-		panic(err)
-	}
-	defer screen.Fini()
-	
-	// Set global screen for our compatibility layer
-	SetGlobalScreen(screen)
+	defer termbox.Close()
+	termbox.SetInputMode(termbox.InputAlt)
 
 	gemacs := new_gemacs(os.Args[1:])
 	
@@ -822,7 +816,7 @@ func main() {
 	gemacs.resize()
 	gemacs.draw()
 	cx, cy := gemacs.cursor_position()
-	GetGlobalScreen().ShowCursor(cx, cy)
-	GetGlobalScreen().Show()
+	termbox.SetCursor(cx, cy)
+	termbox.Flush()
 	gemacs.main_loop()
 }

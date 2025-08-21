@@ -177,13 +177,12 @@ func new_view(ctx view_context, buf *buffer, g *gemacs) *view {
 	v.g = g
 	v.ctx = ctx
 	// Create a minimal screen buffer - will be resized properly later
-	screen := GetGlobalScreen()
-	if screen == nil {
-		panic("Global screen not initialized")
-	}
-	v.uibuf = NewScreenBuffer(screen)
+	v.uibuf = NewScreenBuffer(nil) // Pass nil since we're using termbox mode
+	// Start with minimal size - will be resized by layout
+	v.uibuf.Resize(1, 1)
 	v.attach(buf)
 	v.ac_decide = default_ac_decide
+	v.dirty = dirty_everything // Ensure view is initially marked as dirty
 	v.highlight_ranges = make([]byte_range, 0, 10)
 	v.tags = make([]view_tag, 0, 10)
 	v.pressesSinceEsc = 4
@@ -310,10 +309,8 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 		}
 
 		if rx >= v.uibuf.Width {
-			if live {
-				st := makeStyle(termbox.ColorDefault, termbox.ColorDefault)
-				v.uibuf.SetContent(v.uibuf.Width-1, y, '>', nil, st)
-			}
+			st := makeStyle(termbox.ColorDefault, termbox.ColorDefault)
+			v.uibuf.SetContent(v.uibuf.Width-1, y, '>', nil, st)
 
 			break
 		}
@@ -328,7 +325,7 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 					break
 				}
 
-				if rx >= 0 && live {
+				if rx >= 0 {
 					cell := v.make_cell(line_num, bx, ' ')
 					st := makeStyle(termbox.Attribute(cell.Fg), termbox.Attribute(cell.Bg))
 					v.uibuf.SetContent(rx, y, ' ', nil, st)
@@ -337,7 +334,7 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 		case r < 32:
 			// invisible chars like ^R or ^@
 			red := makeStyle(termbox.ColorRed, termbox.ColorDefault)
-			if rx >= 0 && live {
+			if rx >= 0 {
 				v.uibuf.SetContent(rx, y, '^', nil, red)
 			}
 			x++
@@ -345,12 +342,12 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 			if rx >= v.uibuf.Width {
 				break
 			}
-			if rx >= 0 && live {
+			if rx >= 0 {
 				v.uibuf.SetContent(rx, y, invisible_rune_table[r], nil, red)
 			}
 			x++
 		default:
-			if rx >= 0 && live {
+			if rx >= 0 {
 				cell := v.make_cell(line_num, bx, r)
 				st := makeStyle(termbox.Attribute(cell.Fg), termbox.Attribute(cell.Bg))
 				v.uibuf.SetContent(rx, y, r, nil, st)
@@ -361,7 +358,7 @@ func (v *view) draw_line(line *line, line_num, coff, line_voffset int) {
 		bx += rlen
 	}
 
-	if line_voffset != 0 && live {
+	if line_voffset != 0 {
 		st := makeStyle(termbox.ColorDefault, termbox.ColorDefault)
 		v.uibuf.SetContent(0, y, '<', nil, st)
 	}
